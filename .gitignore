@@ -8,3 +8,5 @@ node_modules/
 *.sqlite-*
 evidence/raw/
 .DS_Store
+/runbooks/package-lock.json
+/reactors/smoke/package-lock.json

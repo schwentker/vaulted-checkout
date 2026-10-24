@@ -2,8 +2,8 @@
 
 - Builder / model / effort: Codex. User requested GPT-6.1 Sol, High; High used for review, state and security work. Model selection is controlled by the calling session and was not changed programmatically.
 - Date (UTC): 2026-10-24.
-- Branch + commit: `codex/phase-2`; implementation checkpoint to be recorded below after the final local checks.
-- Uncommitted files: will be recorded after the checkpoint. The folder had no Git repository at entry; the phase 1 foundation is included in this initial history.
+- Branch + commit: `codex/phase-2`, implementation checkpoint `54d7a2d`; the following handoff commit records final metadata and lockfile tracking cleanup.
+- Uncommitted files: none after the final handoff checkpoint. The folder had no Git repository at entry; the phase 1 foundation is included in this initial history. Standalone runbook/smoke install lockfiles are left on disk but ignored; the root lockfile is the only tracked dependency lock.
 - Contract version (CHANGELOG entry): v1.1, 2026-10-24 phase 2.
 
 ## What is done
