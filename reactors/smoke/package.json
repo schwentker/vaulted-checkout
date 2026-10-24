@@ -1,0 +1,8 @@
+{
+  "name": "vc-smoke-reactor",
+  "private": true,
+  "description": "Dependencies for the Gate A smoke Reactor. Passed to BT as runtime.dependencies (exact versions).",
+  "dependencies": {
+    "viem": "2.57.11"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vc/signer-response.schema.json",
+  "title": "Reactor res.body",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "from",
+        "signature",
+        "attempt_id"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{130}$"
+        },
+        "attempt_id": {
+          "type": "string"
+        }
+      },
+      "description": "statusCode 200"
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "code"
+      ],
+      "properties": {
+        "ok": {
+          "const": false
+        },
+        "code": {
+          "enum": [
+            "bad_request",
+            "bad_mac",
+            "rule_chain",
+            "rule_asset",
+            "rule_from",
+            "rule_payto",
+            "rule_amount",
+            "rule_window",
+            "rule_policy",
+            "rule_audience",
+            "stale_intent",
+            "key_unavailable",
+            "key_mismatch",
+            "internal"
+          ]
+        }
+      },
+      "description": "statusCode 400 (bad_request), 401 (bad_mac), 403 (rule_*, stale_intent), 500 (key_unavailable, key_mismatch, internal). No other detail is returned or logged."
+    }
+  ]
+}

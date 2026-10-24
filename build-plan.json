@@ -1,0 +1,322 @@
+{
+  "title": "Vaulted Checkout build plan v0.4 (parallel tracks, model + effort per task)",
+  "date": "2026-10-24",
+  "depends_on": [
+    "plan.json v0.3",
+    "codex-review-1.md"
+  ],
+  "principles": [
+    "Two builders (Claude Code, Codex) + Gemini 4 Argon on Sunday. Every task has an owner and a cross-checker from the other vendor.",
+    "Handoff contract per task: files touched, tests run, open questions, written to docs/handoff/<task>.md so any model can resume if another runs out of tokens.",
+    "Interfaces first (P-1 contracts), then parallel tracks. Contracts are the only thing two tracks share.",
+    "Smallest trust surface: signer Reactor is tiny, reviewed by both vendors, frozen after P0 gate.",
+    "No task starts on a claim marked unverified; it starts by verifying."
+  ],
+  "model_key": {
+    "CC-opus": "Claude Code, Opus 5.5 (hard design/security/review)",
+    "CC-sonnet": "Claude Code, Sonnet 5.5 (routine implementation, tests)",
+    "CC-haiku": "Claude Code, Haiku 5.5 (boilerplate, formatting, doc generation)",
+    "GPT-codex": "Codex (GPT), as available on Robert's plan; use highest reasoning for review",
+    "ARGON": "Gemini 4 Argon via AI Studio/Antigravity (Sunday only, needs credits/access at event); thinking_level high for design/verification loops, medium for building",
+    "effort": "low | med | high | max (reasoning effort)"
+  },
+  "bt_applications_to_create": [
+    {
+      "name": "vc-management",
+      "type": "management",
+      "purpose": "Bootstrap only: create apps, deploy/update Reactors via bt CLI",
+      "permissions": [
+        "application:create",
+        "application:read",
+        "application:update",
+        "reactor:create",
+        "reactor:read",
+        "reactor:update"
+      ],
+      "rules": "Held by Robert only, in shell env BT_MANAGEMENT_KEY (not flag, not repo, not any agent). Delete after P0 if no longer needed. Never give to an AI agent session."
+    },
+    {
+      "name": "vc-key-provisioner",
+      "type": "private",
+      "purpose": "One-time: tokenize freshly generated test wallet key (type token, data field, no metadata)",
+      "permissions": [
+        "token:create"
+      ],
+      "rules": "Delete the application right after tokenizing. Local key copy shredded."
+    },
+    {
+      "name": "vc-invoker",
+      "type": "private",
+      "purpose": "Runtime: merchant/MCP server calls POST /reactors/{id}/react",
+      "permissions": [
+        "reactor invoke permission, exact name UNVERIFIED (check Permissions API GET /permissions?application_type=private)"
+      ],
+      "rules": "No token:read, no reactor:update. Cannot read plaintext key."
+    },
+    {
+      "name": "signer-reactor runtime permissions",
+      "type": "reactor runtime.permissions",
+      "purpose": "Lets the Reactor detokenize the key token",
+      "permissions": [
+        "token:read (scoped by access rule/container if supported, UNVERIFIED)"
+      ],
+      "rules": "Only this Reactor can reveal the key."
+    },
+    {
+      "name": "public application",
+      "type": "public",
+      "purpose": "NOT needed (card path + Elements cut)"
+    }
+  ],
+  "tracks": [
+    {
+      "id": "T0",
+      "name": "Verification + contracts (blocking, Sat am)",
+      "tasks": [
+        {
+          "id": "T0.1",
+          "task": "Create BT apps per table; confirm permission names via Permissions API; confirm token type for key; confirm Reactor invoke contract",
+          "owner": "Robert (UI/CLI) + CC-sonnet guiding",
+          "model": "CC-sonnet",
+          "effort": "low",
+          "check": "GPT-codex reads outputs/docs"
+        },
+        {
+          "id": "T0.2",
+          "task": "Write contracts: openapi for merchant, JSON schemas for x402 v2 PaymentRequired/PaymentPayload, Reactor request/response, MCP tool schemas, audit event schema, order+payment-attempt state machine (incl. settlement_unknown)",
+          "owner": "CC-opus",
+          "model": "CC-opus",
+          "effort": "high",
+          "check": "GPT-codex high: attack for replay/idempotency/state gaps"
+        },
+        {
+          "id": "T0.3",
+          "task": "Pin versions + lockfile spike: @x402/* 2.28.0, viem 2.57.11, MCP SDK choice (sdk 1.32.2 vs server 2.4.0), node24",
+          "owner": "GPT-codex",
+          "model": "GPT-codex",
+          "effort": "med",
+          "check": "CC-sonnet runs install on clean machine"
+        }
+      ]
+    },
+    {
+      "id": "T1",
+      "name": "Signer Reactor (critical path, Sat am to pm)",
+      "tasks": [
+        {
+          "id": "T1.1",
+          "task": "Minimal Reactor: detokenize key, build EIP-712 TransferWithAuthorization inside Reactor (fixed domain/contract/chain/asset, integer units, validAfter/Before bounds, random nonce), return x402 v2 payload. Hard rules from configuration: allowlisted payTo, max amount, chain 84532, USDC address",
+          "owner": "CC-opus",
+          "model": "CC-opus",
+          "effort": "high",
+          "check": "GPT-codex high independent review of signing code + rule bypass attempts"
+        },
+        {
+          "id": "T1.2",
+          "task": "Idempotent re-sign: same orderId+attempt returns same authorization (nonce derived deterministically from orderId+attemptId+secret, or supplied by trusted merchant and validated) so retries never mint a second spendable auth",
+          "owner": "CC-opus",
+          "model": "CC-opus",
+          "effort": "high",
+          "check": "GPT-codex"
+        },
+        {
+          "id": "T1.3",
+          "task": "Negative tests: wrong chain, asset, payTo, amount, expired, over cap, malformed; confirm no key/PAN/raw proof in logs (allowlisted audit fields only)",
+          "owner": "GPT-codex",
+          "model": "GPT-codex",
+          "effort": "med",
+          "check": "CC-sonnet reruns"
+        },
+        {
+          "id": "T1.4",
+          "task": "Deploy via bt CLI (reactors create/update, --image node24, --package-json, --configuration, --permissions token:read), benchmark cold/warm",
+          "owner": "Robert runs, CC-sonnet writes commands",
+          "model": "CC-sonnet",
+          "effort": "low",
+          "check": "n/a"
+        }
+      ],
+      "gate": "Reactor-signed auth verifies (recovered address) and settles once on Base Sepolia via facilitator; negatives rejected; both vendors sign off. FREEZE signer code."
+    },
+    {
+      "id": "T2",
+      "name": "Merchant (parallel with T1 after T0.2, Sat)",
+      "tasks": [
+        {
+          "id": "T2.1",
+          "task": "Manifest at /.well-known/commerce-manifest (documented subset), products, orders, pay with x402 v2 headers, facilitator verify/settle client",
+          "owner": "CC-sonnet",
+          "model": "CC-sonnet",
+          "effort": "med",
+          "check": "GPT-codex med"
+        },
+        {
+          "id": "T2.2",
+          "task": "Payment-attempt store: atomic claim, immutable order price, states created/claimed/signed/submitted/settled/settlement_unknown/failed; reconcile job",
+          "owner": "CC-opus",
+          "model": "CC-opus",
+          "effort": "high",
+          "check": "GPT-codex high: concurrency + crash tests"
+        },
+        {
+          "id": "T2.3",
+          "task": "Conformance checklist vs consortium v0.1.0 HTML whitepaper, list deviations (x402 v2, paymentStatus naming, card simulated=not built)",
+          "owner": "CC-haiku",
+          "model": "CC-haiku",
+          "effort": "low",
+          "check": "GPT-codex"
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "name": "MCP adapter (after T0.2, parallel with T1/T2 using mocks, Sat pm)",
+      "tasks": [
+        {
+          "id": "T3.1",
+          "task": "stdio MCP server, fixed adapter profile (tools list_products, create_order, pay_order, get_order), pinned merchant origin, no model-supplied payee/amount at pay time",
+          "owner": "GPT-codex",
+          "model": "GPT-codex",
+          "effort": "med",
+          "check": "CC-sonnet integration test with Claude Code as client"
+        },
+        {
+          "id": "T3.2",
+          "task": "pay_order flow: 402 parse, local policy precheck, call Reactor via vc-invoker, retry with PAYMENT-SIGNATURE, return receipt + explorer link; above cap = reject with clear message",
+          "owner": "CC-sonnet",
+          "model": "CC-sonnet",
+          "effort": "med",
+          "check": "GPT-codex"
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "name": "Hardening + recovery (Sun am)",
+      "tasks": [
+        {
+          "id": "T4.1",
+          "task": "Failure injection: lost signing response, lost settlement response, restart mid-attempt, duplicate pay, facilitator 5xx; assert converge to existing outcome",
+          "owner": "GPT-codex",
+          "model": "GPT-codex",
+          "effort": "high",
+          "check": "CC-opus reviews tests for gaps"
+        },
+        {
+          "id": "T4.2",
+          "task": "Audit view (small): order, decision, signing status, settlement status, receipt, basescan link",
+          "owner": "CC-sonnet",
+          "model": "CC-sonnet",
+          "effort": "low",
+          "check": "visual check by Robert"
+        },
+        {
+          "id": "T4.3",
+          "task": "Secret scan + log review + credential separation check (invoker cannot read key; management key absent from repo/history)",
+          "owner": "CC-opus",
+          "model": "CC-opus",
+          "effort": "med",
+          "check": "GPT-codex"
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "name": "Sunday Argon track (needs hackathon access; all optional, never on critical path)",
+      "tasks": [
+        {
+          "id": "T5.1",
+          "task": "Voice approval prototype for roadmap story: gemini-3.8-live reads the pending over-cap request, manager says yes; output is a mock approval UI only (no payment authority)",
+          "owner": "ARGON (thinking medium, build)",
+          "model": "ARGON",
+          "effort": "med",
+          "check": "CC-opus reviews that voice has no authority path"
+        },
+        {
+          "id": "T5.2",
+          "task": "Independent adversarial review of signer + merchant: Argon at thinking_level high, 1M context, whole repo",
+          "owner": "ARGON",
+          "model": "ARGON",
+          "effort": "high",
+          "check": "CC-opus + GPT-codex triage findings"
+        },
+        {
+          "id": "T5.3",
+          "task": "Interactive HTML architecture diagram + AGENTS.md lessons (guide pattern 5)",
+          "owner": "ARGON",
+          "model": "ARGON",
+          "effort": "med",
+          "check": "CC-haiku fact-checks vs code"
+        }
+      ]
+    },
+    {
+      "id": "T6",
+      "name": "Rehearse, record, article (Sun pm, Mon)",
+      "tasks": [
+        {
+          "id": "T6.1",
+          "task": "3 consecutive runs under 3 min incl. one policy rejection; backup recording; pre-funded wallet",
+          "owner": "Robert + CC-sonnet script",
+          "model": "CC-sonnet",
+          "effort": "low",
+          "check": "n/a"
+        },
+        {
+          "id": "T6.2",
+          "task": "Article from observed behavior only; no job-search mention; no em dashes; state what is simulated and what is trusted",
+          "owner": "CC-opus",
+          "model": "CC-opus",
+          "effort": "med",
+          "check": "GPT-codex fact check against repo + codex-review-1"
+        }
+      ]
+    }
+  ],
+  "parallel_map": "After T0: T1 || T2 || T3 (mocks) run at once. T4 needs T1+T2+T3. T5 independent of T4 if repo is readable. T6 after T4.",
+  "token_handoff_rule": "If a model is out of budget: stop at a green commit, write docs/handoff/<task>.md (state, next step, failing tests), other vendor continues the same task id. Keep tasks small enough to finish in one session.",
+  "budget_hint": "Opus/high only for T0.2, T1.1, T1.2, T2.2, T4.3 (security-critical). Everything else Sonnet/med or Codex/med. Haiku for docs.",
+  "repo_weigh_in": {
+    "agent-checkout (MIT)": {
+      "verdict": "STUDY + borrow 4 patterns, do not fork",
+      "use": [
+        "HMAC/timingSafeEqual verify style",
+        "fail closed, no auto-retry",
+        "tools with no model-supplied args",
+        "per-merchant config pinning"
+      ],
+      "avoid": [
+        "it signs with an HMAC secret in Reactor config, not a vaulted asymmetric key",
+        "no replay/nonce store (README admits)",
+        "browser-card flow is PCI-scope heavy and off-topic",
+        "console has no login"
+      ],
+      "article_angle": "It protects a CARD from the agent; we protect a WALLET KEY. Cite it."
+    },
+    "agentic-commerce-demos (MIT)": {
+      "verdict": "SKIP",
+      "why": "old Agents/Enrollments/Instructions API; travel demo; card network focus; stale clone URL"
+    },
+    "payment-skills (MIT)": {
+      "verdict": "SKIP for build; maybe copy its SKILL.md packaging for an optional 'vaulted-checkout' skill later",
+      "why": "covers PSP orchestration and payments ops, nothing on Reactors/x402/MCP"
+    },
+    "basistheory-cli (no LICENSE)": {
+      "verdict": "USE as a tool (npm i -g @basis-theory-labs/cli, bt)",
+      "why": "deploys Reactors with --image node24 --package-json --configuration --permissions; creates apps; bt reactors logs read/tail helps debug",
+      "limits": [
+        "no invoke command: use REST /reactors/{id}/react",
+        "no token commands: tokenize via API/curl",
+        "no license: do not vendor or redistribute, just run it",
+        "set BT_MANAGEMENT_KEY as env var, never -x flag"
+      ]
+    },
+    "quick-reactor-testing (HCL)": {
+      "verdict": "LOOK at it for fast Reactor iteration",
+      "note": "description only; not read"
+    },
+    "hmac-authentication-example, browser-driver": {
+      "verdict": "optional reading"
+    }
+  }
+}

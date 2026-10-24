@@ -1,0 +1,282 @@
+{
+  "title": "Vaulted Checkout: Open Agentic Commerce reference merchant, projected to MCP, paid in USDC by a Basis Theory Reactor signer",
+  "working_repo_name": "vaulted-checkout",
+  "status": "plan v0.2, 2026-10-24, B2B layer added, pre pressure-test",
+  "deadline": "Demo working Sun 2026-10-25 night PT; article draft Mon 2026-10-26",
+  "goal": "Infra demo, use case later. Show three things in one flow: (1) Basis Theory's consortium spec (Open Agentic Commerce API v0.1.0-draft) running for real, (2) the spec's manifest turned into MCP tools automatically, (3) a stablecoin payment signed inside Basis Theory so the agent and MCP server never touch the wallet key.",
+  "one_sentence_pitch": "An agent buys from a spec-compliant merchant over MCP, pays in testnet USDC via x402, and the only place the wallet key exists is the Basis Theory vault.",
+  "decisions": {
+    "bt_test_tenant": "yes, Robert has one with Reactors",
+    "chain": "Base Sepolia (Coinbase's Ethereum L2 testnet, chain id 84532). Reason: x402 is built around it, Circle faucet gives test USDC, a public x402 facilitator settles there, and the consortium manifest names x402 + eip-712 + USDC.",
+    "chain_stretch": "Add Tempo Moderato (MPP, pathUSD) as a second crypto entry in acceptedPaymentMethod to show the spec stretching beyond x402. Only if core is done.",
+    "agent_client": "Assumed: Claude Code as MCP client for the recorded demo; Gemini works too because the surface is plain MCP. Robert to confirm.",
+    "language": "TypeScript, Node 22+, one pnpm/npm workspace",
+    "card_path": "Basis Theory card token (test card 4242 4242 4242 4242) collected via BT Elements on a small 'save card' page; charge step is a SIMULATED gateway called from a Reactor, labeled simulated everywhere. No real card processing.",
+    "crypto_path": "Real testnet: x402 'exact' scheme, payer signs an EIP-712 USDC transferWithAuthorization (EIP-3009) inside a Reactor; facilitator verifies and settles on Base Sepolia.",
+    "repo": "New repo vaulted-checkout. Copy selected AgentTab modules (do not fork): Mongo ledger patterns, rule versioning + 'cannot raise own ceilings', crash-safe open-payment recovery, voice approval UI. Credit AgentTab in README.",
+    "ledger": "MongoDB Atlas (AgentTab cluster or new db)",
+    "voice": "Stretch, approvals only: manager hears request and says yes, then confirms w/ passkey or approver signature. Voice is UX, signature is proof. ElevenLabs from agenttab live/ for article build; gemini-3.8-live for hackathon build."
+  },
+  "architecture": {
+    "components": [
+      {
+        "name": "merchant",
+        "what": "HTTP server implementing the consortium spec subset",
+        "routes": [
+          "GET /.well-known/commerce-manifest",
+          "GET /api/products",
+          "GET /api/products/{productId}",
+          "POST /api/orders",
+          "GET /api/orders/{orderId}",
+          "POST /api/orders/{orderId}/pay"
+        ],
+        "pay_behavior": {
+          "method=card": "body carries BT token id; merchant invokes card Reactor (simulated gateway); 200 w/ paymentStatus=paid, receipt",
+          "method=x402, no X-PAYMENT header": "402 with x402 payment requirements: scheme exact, network base-sepolia, asset USDC contract, payTo merchant address, maxAmountRequired = order total, resource = pay URL",
+          "method=x402, with X-PAYMENT": "merchant calls facilitator verify then settle; on success order -> paid, X-PAYMENT-RESPONSE header w/ tx hash",
+          "idempotency": "second pay on a paid order returns 409 w/ existing receipt"
+        },
+        "store": "SQLite or JSON file; orders, payments, receipts"
+      },
+      {
+        "name": "manifest-to-mcp",
+        "what": "Generator + MCP server. Reads any merchant's /.well-known/commerce-manifest at startup and registers MCP tools from endpoints + schemas. Holds no keys.",
+        "tools": [
+          "list_products",
+          "get_product(productId)",
+          "create_order(items, shipping?)",
+          "get_order(orderId)",
+          "pay_order(orderId, method: 'x402'|'card', cardTokenId?)"
+        ],
+        "pay_order_flow": [
+          "POST pay without proof",
+          "on 402: parse requirements",
+          "check local policy: amount <= per-order cap, payTo/asset/chain match manifest",
+          "if amount > auto-approve threshold: MCP elicitation asking the human to approve (fallback: tool returns needs_approval and a second call w/ approvalToken)",
+          "invoke signer Reactor w/ requirements + orderId",
+          "retry POST pay with X-PAYMENT from Reactor",
+          "return receipt + tx hash + explorer link"
+        ],
+        "transport": "stdio for Claude Code; streamable HTTP optional"
+      },
+      {
+        "name": "signer-reactor",
+        "what": "Basis Theory Reactor (node24). Input: x402 payment requirements + orderId. Detokenizes the wallet private key token, enforces hard rules, signs EIP-712 transferWithAuthorization, returns base64 X-PAYMENT payload. Never returns or logs the key.",
+        "hard_rules_in_reactor_configuration": [
+          "chainId must equal 84532",
+          "asset must equal Base Sepolia USDC address",
+          "payTo must be in allowlist",
+          "amount <= MAX_PER_PAYMENT",
+          "validBefore <= now + 10 min",
+          "nonce random 32 bytes per call"
+        ],
+        "why_rules_live_here": "The caller (MCP server, agent) cannot loosen them; same idea as AgentTab: it cannot raise its own ceilings.",
+        "deps": [
+          "viem"
+        ]
+      },
+      {
+        "name": "card-reactor",
+        "what": "Reactor that receives a BT card token, reads last4/brand, runs the simulated gateway, returns an authorization id. Exists to show the card side of the same pay endpoint.",
+        "honesty": "Simulated; say so in UI, README, article."
+      },
+      {
+        "name": "save-card-page",
+        "what": "Tiny page w/ BT Elements (public key) to save test card 4242; shows resulting token id for the agent to use.",
+        "keys": "key_pub only in browser; key_priv server-side only"
+      },
+      {
+        "name": "behind-the-calls-panel",
+        "what": "Web view of every HTTP + MCP + Reactor call w/ redacted bodies, like BT's own demos. Doubles as the article's screenshots."
+      },
+      {
+        "name": "decision-service",
+        "what": "Small module in MCP server process or separate HTTP service: reads policy + budgets from Mongo, reserves spend, issues approval requests, records outcomes"
+      },
+      {
+        "name": "approver-console",
+        "what": "Web page for manager: pending requests, approve via passkey/wallet signature; optional voice prompt (stretch)"
+      }
+    ],
+    "trust_boundaries": [
+      "Agent/LLM: sees products, order ids, prices, receipts. Never sees keys, PAN or signatures before they're sent.",
+      "MCP server: sees x402 requirements and the signed payload in transit; no key.",
+      "BT vault + Reactor: only place the private key is ever plaintext.",
+      "Merchant: sees payment proof, never payer key or PAN.",
+      "Facilitator: sees signed authorization; settles on chain."
+    ],
+    "diagram_ascii": "Agent -> MCP(manifest-to-mcp) -> Merchant /pay -402-> MCP -> BT Reactor(signs w/ vaulted key) -> MCP -> Merchant /pay + X-PAYMENT -> Facilitator -> Base Sepolia"
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "name": "Verify unknowns (2 hrs, blocking)",
+      "tasks": [
+        "Confirm BT can store a non-card secret (wallet private key) as a token, which token type, and that a Reactor can detokenize it",
+        "Confirm Reactor invoke endpoint path, payload shape, timeout, network egress, npm deps (viem) allowed",
+        "Confirm x402 server + client packages and current versions, header names, and the public facilitator URL for base-sepolia",
+        "Confirm Base Sepolia USDC contract address and that it supports EIP-3009 transferWithAuthorization",
+        "Confirm MCP TS SDK version w/ elicitation and whether Claude Code renders elicitation; else use approvalToken fallback",
+        "Get consortium whitepaper PDF (gated form) and diff our manifest against it"
+      ],
+      "gate": "Written answers to each; any 'no' triggers its fallback before P1"
+    },
+    {
+      "id": "P1",
+      "name": "Merchant + manifest (Sat)",
+      "tasks": [
+        "routes above",
+        "manifest w/ card + crypto(x402, eip-712, USDC base-sepolia)",
+        "x402 402 response",
+        "facilitator verify/settle",
+        "idempotent pay"
+      ],
+      "gate": "curl script: create order, pay w/o proof -> 402 w/ requirements; pay w/ locally signed proof -> 200 + real tx hash on basescan sepolia"
+    },
+    {
+      "id": "P2",
+      "name": "manifest-to-mcp (Sat)",
+      "tasks": [
+        "generator from manifest",
+        "5 tools",
+        "local-signer mode for testing"
+      ],
+      "gate": "MCP Inspector lists tools; Claude Code buys one product end to end w/ local signer"
+    },
+    {
+      "id": "P3",
+      "name": "Reactor signer (Sun)",
+      "tasks": [
+        "tokenize test wallet key",
+        "deploy signer Reactor w/ hard rules",
+        "swap local signer for Reactor",
+        "negative tests: wrong payTo, over cap, wrong chain all rejected by Reactor",
+        "Mongo policy + budgets + reservations",
+        "atomic reserve/commit/release",
+        "approver signature verify in Reactor"
+      ],
+      "gate": "Same E2E buy, key only in BT; grep of all logs shows no key; 3 negative tests fail closed; concurrent test: 10 parallel pays against $50 budget never exceed $50; over-threshold pay blocked until signed approval"
+    },
+    {
+      "id": "P4",
+      "name": "Card path + panel (Sun)",
+      "tasks": [
+        "save-card page w/ Elements",
+        "card Reactor simulated",
+        "behind-the-calls panel"
+      ],
+      "gate": "Agent pays one order by card token, one by USDC, both visible in panel"
+    },
+    {
+      "id": "P5",
+      "name": "Stretch",
+      "tasks": [
+        "voice approval (ElevenLabs or gemini-3.8-live) on approver console",
+        "human approval via elicitation over threshold",
+        "draft MCP extension id ai.sandboxlabs/commerce-payments in capabilities.extensions",
+        "Tempo/MPP second crypto method"
+      ],
+      "gate": "optional"
+    },
+    {
+      "id": "P6",
+      "name": "Article + recording (Mon)",
+      "tasks": [
+        "90 s screen recording",
+        "HTML architecture diagram",
+        "LinkedIn article draft"
+      ],
+      "gate": "Robert approves text"
+    }
+  ],
+  "fallbacks": {
+    "bt_cannot_hold_key_or_reactor_cannot_sign": "Local signer process holds key (env, never in repo); Reactor verifies requirements against rules and returns an approval token the signer requires. Article says so plainly.",
+    "facilitator_down": "Self-verify: merchant checks USDC Transfer event on Base Sepolia via public RPC",
+    "elicitation_unsupported": "approvalToken two-call pattern",
+    "consortium_spec_details_differ": "Mark our manifest 'based on v0.1.0-draft as published on basistheory.ai/consortium'; list deviations in README"
+  },
+  "security": [
+    "Testnet only; wallet funded w/ faucet USDC only; key generated fresh for demo",
+    "key_priv and facilitator creds in .env, .env in .gitignore, .env.example committed",
+    "Reactor logs off or level=error; never echo inputs",
+    "Payment requirements validated twice: MCP policy (soft) and Reactor rules (hard)",
+    "Replay: EIP-3009 nonce unique + validBefore short; merchant rejects reused payment proof",
+    "Price tamper: Reactor allowlists payTo; merchant re-reads order total server-side, never trusts body amount",
+    "Prompt injection: product descriptions are data; pay_order requires orderId created in same session",
+    "Approvals are EIP-712 signatures by approver keys listed in Reactor config; agent-supplied booleans ignored",
+    "Budget reservation atomic; expired reservations auto-release",
+    "Mongo creds server-side only; Reactor does not need Mongo access"
+  ],
+  "out_of_scope": [
+    "mainnet",
+    "real card charges",
+    "returns/cancel/shipping endpoints",
+    "multi-merchant",
+    "Skyfire/KYAPay auth",
+    "UI polish beyond panel"
+  ],
+  "unverified_claims_do_not_publish_until_checked": [
+    "Reactors are marketed for stablecoin payment processing",
+    "BT tokens can store wallet private keys",
+    "Consortium field names beyond manifest top-level and payments.acceptedPaymentMethod",
+    "No public working implementation of the consortium spec exists",
+    "Reactor can verify EIP-712 signatures within its timeout"
+  ],
+  "article": {
+    "working_title": "The key never leaves the vault: an agent pays in USDC over MCP",
+    "angle": "Teach: manifest -> MCP projection, x402 in 5 steps, why signing belongs next to the vault. Lead w/ the work.",
+    "rules": [
+      "no em dashes",
+      "no self-spotlight",
+      "never mention any job application or job seeking",
+      "say what is simulated"
+    ]
+  },
+  "known_facts": {
+    "mcp_extensions": "opt-in; id {reversed-domain}/{name}; server capabilities.extensions in server/discover; client _meta['io.modelcontextprotocol/clientCapabilities'].extensions; no payments/x402 extension exists as of 2026-10-24",
+    "consortium": "Open Agentic Commerce API v0.1.0-draft; /.well-known/commerce-manifest; payments.acceptedPaymentMethod incl. {type:crypto, protocols:[x402,eip-712,eip-2612], assets:[USDC Ethereum, USDC Solana]}; endpoints.pay /api/orders/{orderId}/pay",
+    "reactors": "POST /reactors (reactor:create); runtime.image node22|node24; configuration map; runtime.dependencies npm; runtime.permissions; async state creating->active",
+    "bt_hosts": "test https://api.test.basistheory.com; header BT-API-KEY"
+  },
+  "framing": {
+    "b2b": "Company wallet for agents w/ finance's spend policy enforced at signing. Reactor = signing officer (policy enforcement point); policy + approvals + budgets = decision layer finance owns.",
+    "pitch": "Company cards come w/ spend policy. Company wallets for agents don't. Vaulted Checkout puts finance's rules at the moment of signing: approved vendors, inside budget, manager sign-off above the limit, and the key never leaves Basis Theory."
+  },
+  "b2b_policy": {
+    "policy_doc": "Versioned JSON in Mongo, written by finance role only: vendors[] (payTo, name, category), budgets[] (team/costCenter, period, limit), roles[] (agentId -> team, perPaymentCap), approvalThreshold, approvers[] (public keys)",
+    "agent_cannot": [
+      "edit policy",
+      "raise caps",
+      "add vendors",
+      "approve its own request"
+    ],
+    "flow": [
+      "MCP pay_order gets x402 requirements",
+      "decision service: vendor approved? within per-payment cap? budget remaining? approval needed?",
+      "atomic reserve in Mongo (findOneAndUpdate on budget doc w/ remaining >= amount), status=reserved, reservationId",
+      "if over threshold: approval request to manager; approver signs EIP-712 Approval{reservationId, amount, payTo, expiry}",
+      "Reactor invoked w/ requirements + reservation + optional signed approval + policy version hash",
+      "Reactor re-checks hard rules from its own configuration AND verifies approval signature against approver keys in configuration; signs payment",
+      "on settle: reservation -> spent w/ tx hash; on fail/timeout: release reservation"
+    ],
+    "why_reactor_still_checks": "Mongo + decision service are soft layer; Reactor config is hard floor. Compromised decision service still cannot pay an unlisted vendor or exceed hard cap.",
+    "pattern_names": [
+      "PEP/PDP split (XACML)",
+      "separation of duties",
+      "reserve-then-commit (two-phase spend)"
+    ]
+  },
+  "agenttab_reuse": {
+    "copy": [
+      "Mongo collections + indexes for offers/rule versions/approvals/payments",
+      "ceiling-cannot-rise check",
+      "open-payment recovery after crash",
+      "ElevenLabs voice approval (live/)"
+    ],
+    "leave": [
+      "MPP session/channel code (unless Tempo stretch)",
+      "self-rewriting rule proposals",
+      "paid research API seller"
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vc/attempt.schema.json",
+  "title": "spend-service attempt row",
+  "type": "object",
+  "required": [
+    "attempt_id",
+    "order_id",
+    "state",
+    "intent",
+    "intent_mac",
+    "created_at",
+    "required",
+    "chain_start_block",
+    "nonce",
+    "sign_calls",
+    "uncertain_sign",
+    "payment_header",
+    "receipt",
+    "updated_at",
+    "payment_requirements_hash"
+  ],
+  "properties": {
+    "attempt_id": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "authorized",
+        "signing",
+        "sign_unknown",
+        "rejected",
+        "signed",
+        "submitted",
+        "settlement_unknown",
+        "settled",
+        "failed_confirmed"
+      ]
+    },
+    "intent": {
+      "$ref": "intent.schema.json"
+    },
+    "intent_mac": {
+      "type": "string"
+    },
+    "signature": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "payment_requirements_hash": {
+      "type": "string",
+      "description": "sha256 of canonical accepted requirements"
+    },
+    "tx_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reject_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "required": {
+      "type": "object",
+      "description": "Original x402 v2 PaymentRequired including accepted requirements and resource; immutable"
+    },
+    "chain_start_block": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$"
+    },
+    "sign_calls": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "uncertain_sign": {
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "payment_header": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Encoded original PaymentPayload; private recovery data"
+    },
+    "receipt": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "x-storage": "signature and full PaymentPayload are recovery data: stored in DB, never in logs, audit view, or MCP output",
+  "additionalProperties": false
+}

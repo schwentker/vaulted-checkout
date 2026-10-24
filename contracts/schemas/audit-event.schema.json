@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vc/audit-event.schema.json",
+  "title": "Allowlisted audit event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ts",
+    "component",
+    "event",
+    "order_id"
+  ],
+  "properties": {
+    "ts": {
+      "type": "string"
+    },
+    "component": {
+      "enum": [
+        "mcp-adapter",
+        "spend-service",
+        "signer",
+        "merchant"
+      ]
+    },
+    "event": {
+      "enum": [
+        "order_created",
+        "pay_requested",
+        "requirements_checked",
+        "attempt_authorized",
+        "sign_requested",
+        "signed",
+        "sign_rejected",
+        "sign_unknown",
+        "submitted",
+        "settled",
+        "settlement_unknown",
+        "failed_confirmed",
+        "reconciled",
+        "receipt_returned"
+      ]
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "attempt_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,77})$"
+    },
+    "to": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$"
+    },
+    "state": {
+      "type": "string"
+    },
+    "reject_code": {
+      "type": "string"
+    },
+    "tx_hash": {
+      "type": "string"
+    },
+    "latency_ms": {
+      "type": "integer"
+    }
+  },
+  "x-forbidden": [
+    "private key",
+    "token data",
+    "intent_mac",
+    "signature",
+    "PAYMENT-SIGNATURE",
+    "api keys",
+    "full error objects",
+    "request bodies"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "vaulted-checkout",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "runbooks"
+  ],
+  "engines": {
+    "node": "26.12.0"
+  },
+  "packageManager": "npm@11.20.0",
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "golden": "node contracts/fixtures/gen-golden.mjs",
+    "smoke:test": "node reactors/smoke/local-test.mjs",
+    "demo:local": "node scripts/demo-local.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@x402/core": "2.28.0",
+    "@x402/evm": "2.28.0",
+    "better-sqlite3": "13.0.3",
+    "viem": "2.57.11"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.6.5",
+    "typescript": "7.0.2"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.3": true
+  }
+}
