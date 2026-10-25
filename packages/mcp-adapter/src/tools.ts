@@ -104,7 +104,7 @@ function text(v:unknown,max=200):string { return typeof v==='string'?v.replace(/
 function order(v:unknown) {
   const o=obj(v);
   if(!Array.isArray(o.items)||o.currency!=='USDC'||!['unpaid','pending','paid'].includes(o.paymentStatus as string)) bad('bad_response');
-  const items=(o.items as unknown[]).map(i=>{const x=obj(i);if(!Number.isSafeInteger(x.quantity))bad('bad_response');return {productId:safeId(x.productId,'bad_response'),quantity:x.quantity as number};});
+  const items=(o.items as unknown[]).map(i=>{const x=obj(i);if(!Number.isSafeInteger(x.quantity))bad('bad_response');return {productId:safeId(x.productId,'bad_response'),quantity:x.quantity as number,unitAmount:usdc(x.unitAmount)};});
   return {orderId:safeId(o.id,'bad_response'),amount:usdc(o.amount),currency:'USDC' as const,paymentStatus:o.paymentStatus as string,items};
 }
 
@@ -114,14 +114,14 @@ export async function callTool(client:SpendClient,name:unknown,raw:unknown):Prom
       args(raw,[]);
       const {status,value}=await client.request('/products');
       if(status!==200||!Array.isArray(value)) return httpError(status,value);
-      return {status:'ok',products:value.slice(0,50).map(p=>{const x=obj(p);if(x.currency!=='USDC')bad('bad_response');return {productId:safeId(x.id,'bad_response'),name:text(x.name),price:usdc(x.unitAmount),currency:'USDC'};})};
+      return {status:'ok',products:value.slice(0,50).map(p=>{const x=obj(p);if(x.currency!=='USDC')bad('bad_response');return {id:safeId(x.id,'bad_response'),name:text(x.name),unitAmount:usdc(x.unitAmount),currency:'USDC'};})};
     }
     case 'create_order': {
       const a=args(raw,['productId','quantity']);
       const productId=safeId(a.productId,'bad_product_id');
       if(!Number.isSafeInteger(a.quantity)||(a.quantity as number)<1||(a.quantity as number)>10) bad('bad_quantity');
       const {status,value}=await client.request('/orders',{method:'POST',body:{items:[{productId,quantity:a.quantity}]}});
-      if(status!==201) return httpError(status,value);
+      if(status!==201&&status!==200) return httpError(status,value);
       return {status:'created',...order(value)};
     }
     case 'pay_order': {

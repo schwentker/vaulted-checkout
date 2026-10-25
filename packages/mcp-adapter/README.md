@@ -9,6 +9,8 @@ Outputs (JSON text, built from allowlists):
 - refused `{status, orderId, code, reason}` (fixed reasons: rule_amount, rule_payto, else "refused by payment policy")
 - pending `{status, orderId, state, hint}`
 - error `{status:"error", code}` with `isError: true`
-- list_products `{status:"ok", products:[{productId,name,price,currency}]}`, create_order `{status:"created", orderId, amount, currency, paymentStatus, items}`, get_order `{status:"order", ...same, payment?}`
+- list_products `{status:"ok", products:[{id,name,unitAmount,currency}]}`, create_order `{status:"created", orderId, amount, currency, paymentStatus, items:[{productId,quantity,unitAmount}]}`, get_order `{status:"order", ...same, payment?}`
 
 Never output intent, intent_mac, nonce, signature, payment_header or PAYMENT-* headers.
+
+All amounts in adapter output (amount, unitAmount) are decimal USDC strings, e.g. "1.50", not atomic units.

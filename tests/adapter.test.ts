@@ -33,7 +33,7 @@ test('stdio server exposes exactly the 4 tools; unknown tool is a fixed error',a
   assert.equal(r.isError,true);assert.deepEqual(JSON.parse(r.content[0].text),{status:'error',code:'unknown_tool'});
   assert.equal(s.requests,before);
   const p:any=await client.callTool({name:'list_products',arguments:{}});
-  assert.deepEqual(JSON.parse(p.content[0].text).products.map((x:any)=>[x.productId,x.price]),[['dataset-tox-full','7.50'],['demo','1.50'],['paper-tox-2026','1.50']]);
+  assert.deepEqual(JSON.parse(p.content[0].text).products.map((x:any)=>[x.id,x.unitAmount]),[['dataset-tox-full','7.50'],['demo','1.50'],['paper-tox-2026','1.50']]);
 });
 
 test('stdio server refuses a non-loopback SPEND_ORIGIN at start',async t=>{
@@ -45,7 +45,7 @@ test('settle returns the allowlisted receipt; duplicate pay returns the same txH
   const s=await buyerSetup(t);const c=new SpendClient(s.origin);
   const o=await call(c,'create_order',{productId:'paper-tox-2026',quantity:1});
   assert.deepEqual(Object.keys(o).sort(),['amount','currency','items','orderId','paymentStatus','status']);
-  assert.equal(o.amount,'1.50');assert.deepEqual(o.items,[{productId:'paper-tox-2026',quantity:1}]);
+  assert.equal(o.amount,'1.50');assert.deepEqual(o.items,[{productId:'paper-tox-2026',quantity:1,unitAmount:'1.50'}]);
   const r=await call(c,'pay_order',{orderId:o.orderId});
   assert.deepEqual(Object.keys(r).sort(),['amount','explorer','orderId','status','txHash']);
   assert.equal(r.status,'settled');assert.equal(r.amount,'1.50');assert.match(r.txHash,/^0x[0-9a-f]{64}$/);

@@ -76,7 +76,7 @@ export async function runBuyer(o:{scripted?:boolean;task?:string;model?:Model;en
       observe(name,v,a);return v;
     };
     const observe=(name:string,v:any,a:Record<string,unknown>)=>{
-      if(v.status==='ok'&&name==='list_products') { out(`store  <- ${v.products.length} products: ${v.products.map((p:any)=>`${p.productId} ${p.price} USDC`).join(', ')}`);log.emit({actor:'agent',kind:'list'}); }
+      if(v.status==='ok'&&name==='list_products') { out(`store  <- ${v.products.length} products: ${v.products.map((p:any)=>`${p.id} ${p.unitAmount} USDC`).join(', ')}`);log.emit({actor:'agent',kind:'list'}); }
       else if(v.status==='created') { const p=v.items[0]?.productId;out(`store  <- order ${v.orderId} ${v.amount} USDC`);log.emit({actor:'merchant',kind:'order_created',orderId:v.orderId,...(p?{productId:p}:{}),amount:v.amount}); }
       else if(v.status==='order') { out(`store  <- order ${v.orderId} ${v.paymentStatus}`);if(v.payment)payment(v.payment); }
       else if(v.status==='error') {
