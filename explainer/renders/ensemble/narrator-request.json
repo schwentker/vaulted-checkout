@@ -1,0 +1,46 @@
+{
+  "voiceId": "hpp4J3VqNfWAUOO0d1Us",
+  "role": "narrator",
+  "text": "A buyer. In testnet USDC. The buyer. Their spend service. Through fixed tools. An agent can buy. Authority stays with the buyer.",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.58,
+    "similarity_boost": 0.8,
+    "style": 0.08,
+    "use_speaker_boost": true,
+    "speed": 1.13
+  },
+  "seed": 20261026,
+  "segments": [
+    {
+      "id": "S0-01",
+      "kind": "preview",
+      "text": "A buyer."
+    },
+    {
+      "id": "S0-03",
+      "kind": "preview",
+      "text": "In testnet USDC."
+    },
+    {
+      "id": "S1-01",
+      "kind": "preview",
+      "text": "The buyer."
+    },
+    {
+      "id": "S1-03",
+      "kind": "preview",
+      "text": "Their spend service."
+    },
+    {
+      "id": "S1-04",
+      "kind": "preview",
+      "text": "Through fixed tools."
+    },
+    {
+      "id": "audition-narrator",
+      "kind": "audition",
+      "text": "An agent can buy. Authority stays with the buyer."
+    }
+  ]
+}

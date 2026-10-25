@@ -1,0 +1,43 @@
+1
+00:00:00,000 --> 00:00:01,000
+narrator: A buyer.
+
+2
+00:00:01,000 --> 00:00:02,200
+buyer: My agent buys.
+
+3
+00:00:02,200 --> 00:00:03,600
+narrator: In testnet USDC.
+
+4
+00:00:03,600 --> 00:00:06,000
+basis theory: I hold the wallet key.
+
+5
+00:00:06,000 --> 00:00:07,000
+narrator: The buyer.
+
+6
+00:00:07,000 --> 00:00:08,400
+buyer: My agent shops.
+
+7
+00:00:08,400 --> 00:00:10,200
+narrator: Their spend service.
+
+8
+00:00:10,200 --> 00:00:11,600
+narrator: Through fixed tools.
+
+9
+00:00:11,600 --> 00:00:13,000
+buyer’s spend service: I check policy.
+
+10
+00:00:13,000 --> 00:00:14,400
+buyer’s spend service: I keep a ledger.
+
+11
+00:00:14,400 --> 00:00:15,000
+buyer’s spend service: I seal approved intents.

@@ -1,0 +1,212 @@
+[
+  {
+    "text": "vaulted checkout",
+    "x": 96,
+    "baseline": 54,
+    "size": 24,
+    "width": 182.47
+  },
+  {
+    "text": "S1 / 12 of 12",
+    "x": 1440,
+    "baseline": 54,
+    "size": 24,
+    "width": 187.84
+  },
+  {
+    "text": "separate roles, one payment",
+    "x": 64,
+    "baseline": 138,
+    "size": 66,
+    "width": 1023.46
+  },
+  {
+    "text": "The chain settles.",
+    "x": 93,
+    "baseline": 926,
+    "size": 42,
+    "width": 321.11
+  },
+  {
+    "text": "testnet USDC",
+    "x": 64,
+    "baseline": 1044,
+    "size": 25,
+    "width": 148.45
+  },
+  {
+    "text": "after provisioning",
+    "x": 360,
+    "baseline": 1044,
+    "size": 25,
+    "width": 198.3
+  },
+  {
+    "text": "buyer",
+    "x": 88,
+    "baseline": 310,
+    "size": 29,
+    "width": 75.84
+  },
+  {
+    "text": "buying",
+    "x": 108,
+    "baseline": 382,
+    "size": 38,
+    "width": 117.19
+  },
+  {
+    "text": "agent",
+    "x": 108,
+    "baseline": 428,
+    "size": 38,
+    "width": 97.78
+  },
+  {
+    "text": "untrusted",
+    "x": 108,
+    "baseline": 462,
+    "size": 23,
+    "width": 94.71
+  },
+  {
+    "text": "MCP tool",
+    "x": 106,
+    "baseline": 597,
+    "size": 28,
+    "width": 118.59
+  },
+  {
+    "text": "server",
+    "x": 106,
+    "baseline": 636,
+    "size": 30,
+    "width": 82.88
+  },
+  {
+    "text": "fixed tools",
+    "x": 106,
+    "baseline": 677,
+    "size": 24,
+    "width": 112.7
+  },
+  {
+    "text": "spend service",
+    "x": 366,
+    "baseline": 382,
+    "size": 40,
+    "width": 245.18
+  },
+  {
+    "text": "trusted buyer side",
+    "x": 366,
+    "baseline": 418,
+    "size": 24,
+    "width": 193.55
+  },
+  {
+    "text": "basis theory",
+    "x": 824,
+    "baseline": 311,
+    "size": 35,
+    "width": 191.17
+  },
+  {
+    "text": "signer reactor",
+    "x": 846,
+    "baseline": 380,
+    "size": 39,
+    "width": 245.29
+  },
+  {
+    "text": "vault",
+    "x": 846,
+    "baseline": 661,
+    "size": 37,
+    "width": 80.27
+  },
+  {
+    "text": "wallet key",
+    "x": 923,
+    "baseline": 741,
+    "size": 37,
+    "width": 170.26
+  },
+  {
+    "text": "merchant",
+    "x": 1344,
+    "baseline": 318,
+    "size": 43,
+    "width": 179.08
+  },
+  {
+    "text": "separate party",
+    "x": 1344,
+    "baseline": 356,
+    "size": 26,
+    "width": 173.09
+  },
+  {
+    "text": "facilitator",
+    "x": 1344,
+    "baseline": 530,
+    "size": 43,
+    "width": 182.39
+  },
+  {
+    "text": "base sepolia",
+    "x": 1344,
+    "baseline": 709,
+    "size": 41,
+    "width": 234.69
+  },
+  {
+    "text": "public merchant lane",
+    "x": 905,
+    "baseline": 225,
+    "size": 28,
+    "width": 264.62
+  },
+  {
+    "text": "policy",
+    "x": 366,
+    "baseline": 488,
+    "size": 35,
+    "width": 95.16
+  },
+  {
+    "text": "attempt ledger",
+    "x": 366,
+    "baseline": 560,
+    "size": 35,
+    "width": 231.0
+  },
+  {
+    "text": "approved intent",
+    "x": 384,
+    "baseline": 650,
+    "size": 31,
+    "width": 222.69
+  },
+  {
+    "text": "HMAC",
+    "x": 384,
+    "baseline": 688,
+    "size": 24,
+    "width": 57.8
+  },
+  {
+    "text": "5 fixed rules",
+    "x": 864,
+    "baseline": 475,
+    "size": 34,
+    "width": 191.02
+  },
+  {
+    "text": "USDC",
+    "x": 1344,
+    "baseline": 772,
+    "size": 34,
+    "width": 81.88
+  }
+]

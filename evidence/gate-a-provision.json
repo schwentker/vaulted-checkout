@@ -1,0 +1,8 @@
+{
+  "token_id": "d474d0c3-7c3c-40dd-aec9-98ed68e8c5f3",
+  "address": "0x1feD0f4EF284900B88966A05D0a8F5F6C39F0229",
+  "containers": [
+    "/general/high/"
+  ]
+}
+Next: delete the vc-key-provisioner application in the portal, then: unset BT_PROVISIONER_KEY

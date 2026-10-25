@@ -1,0 +1,170 @@
+[
+  {
+    "text": "vaulted checkout",
+    "x": 96,
+    "baseline": 54,
+    "size": 24,
+    "width": 182.47
+  },
+  {
+    "text": "S8 / 7 of 7",
+    "x": 1440,
+    "baseline": 54,
+    "size": 24,
+    "width": 158.94
+  },
+  {
+    "text": "who holds what",
+    "x": 64,
+    "baseline": 138,
+    "size": 66,
+    "width": 574.93
+  },
+  {
+    "text": "Merchant: no buyer keys.",
+    "x": 93,
+    "baseline": 926,
+    "size": 42,
+    "width": 489.01
+  },
+  {
+    "text": "testnet USDC",
+    "x": 64,
+    "baseline": 1044,
+    "size": 25,
+    "width": 148.45
+  },
+  {
+    "text": "after provisioning",
+    "x": 360,
+    "baseline": 1044,
+    "size": 25,
+    "width": 198.3
+  },
+  {
+    "text": "agent + MCP",
+    "x": 86,
+    "baseline": 319,
+    "size": 31,
+    "width": 186.3
+  },
+  {
+    "text": "spend service",
+    "x": 422,
+    "baseline": 319,
+    "size": 36,
+    "width": 220.66
+  },
+  {
+    "text": "merchant",
+    "x": 822,
+    "baseline": 319,
+    "size": 36,
+    "width": 149.92
+  },
+  {
+    "text": "operator shell",
+    "x": 86,
+    "baseline": 579,
+    "size": 36,
+    "width": 226.44
+  },
+  {
+    "text": "provisioning",
+    "x": 422,
+    "baseline": 579,
+    "size": 36,
+    "width": 198.95
+  },
+  {
+    "text": "basis theory",
+    "x": 822,
+    "baseline": 579,
+    "size": 36,
+    "width": 196.63
+  },
+  {
+    "text": "vault",
+    "x": 846,
+    "baseline": 661,
+    "size": 37,
+    "width": 80.27
+  },
+  {
+    "text": "wallet key",
+    "x": 923,
+    "baseline": 741,
+    "size": 37,
+    "width": 170.26
+  },
+  {
+    "text": "seal key",
+    "x": 474,
+    "baseline": 389,
+    "size": 29,
+    "width": 107.62
+  },
+  {
+    "text": "seal key",
+    "x": 1380,
+    "baseline": 666,
+    "size": 29,
+    "width": 107.62
+  },
+  {
+    "text": "service + signer",
+    "x": 1332,
+    "baseline": 716,
+    "size": 28,
+    "width": 198.17
+  },
+  {
+    "text": "invoker key",
+    "x": 474,
+    "baseline": 469,
+    "size": 29,
+    "width": 151.66
+  },
+  {
+    "text": "management",
+    "x": 135,
+    "baseline": 652,
+    "size": 29,
+    "width": 169.84
+  },
+  {
+    "text": "operator only",
+    "x": 87,
+    "baseline": 711,
+    "size": 26,
+    "width": 161.89
+  },
+  {
+    "text": "provisioner",
+    "x": 474,
+    "baseline": 652,
+    "size": 29,
+    "width": 146.67
+  },
+  {
+    "text": "one-time use",
+    "x": 426,
+    "baseline": 711,
+    "size": 28,
+    "width": 156.79
+  },
+  {
+    "text": "no buyer keys",
+    "x": 87,
+    "baseline": 450,
+    "size": 31,
+    "width": 197.85
+  },
+  {
+    "text": "no buyer keys",
+    "x": 824,
+    "baseline": 450,
+    "size": 36,
+    "width": 229.76
+  }
+]

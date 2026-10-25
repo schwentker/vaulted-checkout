@@ -1,0 +1,29 @@
+{
+  "voiceId": "bGaO5vdJcnB4WojYqfuK",
+  "turn": {
+    "id": "S3-01-03",
+    "scene": "S3",
+    "firstStep": 1,
+    "lastStep": 3,
+    "role": "buyer",
+    "speaker": "buyer’s spend service",
+    "phrases": [
+      "I check the terms against policy,",
+      "save one nonce and expiry with the attempt,",
+      "then seal that intent."
+    ],
+    "text": "I check the terms against policy, save one nonce and expiry with the attempt, then seal that intent.",
+    "sceneStart": 39,
+    "sceneEnd": 49
+  },
+  "text": "I check the terms against policy, save one nonce and expiry with the attempt, then seal that intent.",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.55,
+    "similarity_boost": 0.8,
+    "style": 0.12,
+    "use_speaker_boost": true,
+    "speed": 1.0
+  },
+  "seed": 20261027
+}

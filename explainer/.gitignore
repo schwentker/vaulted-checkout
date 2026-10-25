@@ -1,0 +1,10 @@
+__pycache__/
+stills/.render/
+stills/.manim/
+manim/.glyphs/
+stills/.qa-motion/
+stills/.qa-portrait/
+renders/ensemble/.manim/
+voice/casting/available-voices.json
+renders/film104/.manim-landscape/
+renders/film104/.manim-portrait/

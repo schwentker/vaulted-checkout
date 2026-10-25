@@ -1,0 +1,27 @@
+{
+  "voiceId": "XrExE9yKIg1WjnnlVkGX",
+  "turn": {
+    "id": "S5-05-05",
+    "scene": "S5",
+    "firstStep": 5,
+    "lastStep": 5,
+    "role": "merchant",
+    "speaker": "merchant",
+    "phrases": [
+      "Confirmed. Here’s your receipt."
+    ],
+    "text": "Confirmed. Here’s your receipt.",
+    "sceneStart": 62,
+    "sceneEnd": 72
+  },
+  "text": "Confirmed. Here’s your receipt.",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.55,
+    "similarity_boost": 0.8,
+    "style": 0.12,
+    "use_speaker_boost": true,
+    "speed": 1.0
+  },
+  "seed": 20261027
+}

@@ -1,0 +1,191 @@
+[
+  {
+    "text": "vaulted checkout",
+    "x": 96,
+    "baseline": 54,
+    "size": 24,
+    "width": 182.47
+  },
+  {
+    "text": "S9 / 3 of 3",
+    "x": 1440,
+    "baseline": 54,
+    "size": 24,
+    "width": 158.94
+  },
+  {
+    "text": "policy, signature, settlement",
+    "x": 64,
+    "baseline": 138,
+    "size": 66,
+    "width": 997.19
+  },
+  {
+    "text": "The chain settles.",
+    "x": 93,
+    "baseline": 926,
+    "size": 42,
+    "width": 321.11
+  },
+  {
+    "text": "testnet USDC",
+    "x": 64,
+    "baseline": 1044,
+    "size": 25,
+    "width": 148.45
+  },
+  {
+    "text": "after provisioning",
+    "x": 360,
+    "baseline": 1044,
+    "size": 25,
+    "width": 198.3
+  },
+  {
+    "text": "buyer",
+    "x": 88,
+    "baseline": 310,
+    "size": 29,
+    "width": 75.84
+  },
+  {
+    "text": "buying",
+    "x": 108,
+    "baseline": 382,
+    "size": 38,
+    "width": 117.19
+  },
+  {
+    "text": "agent",
+    "x": 108,
+    "baseline": 428,
+    "size": 38,
+    "width": 97.78
+  },
+  {
+    "text": "untrusted",
+    "x": 108,
+    "baseline": 462,
+    "size": 23,
+    "width": 94.71
+  },
+  {
+    "text": "MCP tool",
+    "x": 106,
+    "baseline": 597,
+    "size": 28,
+    "width": 118.59
+  },
+  {
+    "text": "server",
+    "x": 106,
+    "baseline": 636,
+    "size": 30,
+    "width": 82.88
+  },
+  {
+    "text": "fixed tools",
+    "x": 106,
+    "baseline": 677,
+    "size": 24,
+    "width": 112.7
+  },
+  {
+    "text": "spend service",
+    "x": 366,
+    "baseline": 382,
+    "size": 40,
+    "width": 245.18
+  },
+  {
+    "text": "trusted buyer side",
+    "x": 366,
+    "baseline": 418,
+    "size": 24,
+    "width": 193.55
+  },
+  {
+    "text": "basis theory",
+    "x": 824,
+    "baseline": 311,
+    "size": 35,
+    "width": 191.17
+  },
+  {
+    "text": "signer reactor",
+    "x": 846,
+    "baseline": 380,
+    "size": 39,
+    "width": 245.29
+  },
+  {
+    "text": "vault",
+    "x": 846,
+    "baseline": 661,
+    "size": 37,
+    "width": 80.27
+  },
+  {
+    "text": "wallet key",
+    "x": 923,
+    "baseline": 741,
+    "size": 37,
+    "width": 170.26
+  },
+  {
+    "text": "merchant",
+    "x": 1344,
+    "baseline": 318,
+    "size": 43,
+    "width": 179.08
+  },
+  {
+    "text": "separate party",
+    "x": 1344,
+    "baseline": 356,
+    "size": 26,
+    "width": 173.09
+  },
+  {
+    "text": "facilitator",
+    "x": 1344,
+    "baseline": 530,
+    "size": 43,
+    "width": 182.39
+  },
+  {
+    "text": "base sepolia",
+    "x": 1344,
+    "baseline": 709,
+    "size": 41,
+    "width": 234.69
+  },
+  {
+    "text": "policy decides",
+    "x": 366,
+    "baseline": 489,
+    "size": 34,
+    "width": 219.79
+  },
+  {
+    "text": "the signer signs",
+    "x": 846,
+    "baseline": 476,
+    "size": 34,
+    "width": 235.58
+  },
+  {
+    "text": "the chain settles",
+    "x": 1344,
+    "baseline": 770,
+    "size": 34,
+    "width": 242.35
+  },
+  {
+    "text": "transfers: 1",
+    "x": 1344,
+    "baseline": 807,
+    "size": 25,
+    "width": 126.64
+  }
+]

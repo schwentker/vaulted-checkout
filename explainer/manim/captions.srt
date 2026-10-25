@@ -1,0 +1,195 @@
+1
+00:00:00,000 --> 00:00:01,000
+A buyer.
+
+2
+00:00:01,000 --> 00:00:02,200
+An agent buys.
+
+3
+00:00:02,200 --> 00:00:03,600
+In testnet USDC.
+
+4
+00:00:03,600 --> 00:00:06,000
+Basis Theory holds the key.
+
+5
+00:00:06,000 --> 00:00:07,000
+The buyer.
+
+6
+00:00:07,000 --> 00:00:08,400
+Its agent shops.
+
+7
+00:00:08,400 --> 00:00:10,200
+The spend service decides.
+
+8
+00:00:10,200 --> 00:00:11,600
+Through fixed tools.
+
+9
+00:00:11,600 --> 00:00:13,000
+It checks policy.
+
+10
+00:00:13,000 --> 00:00:14,400
+Keeps a ledger.
+
+11
+00:00:14,400 --> 00:00:15,800
+Seals approved intents.
+
+12
+00:00:15,800 --> 00:00:18,800
+Basis Theory checks five fixed rules.
+
+13
+00:00:18,800 --> 00:00:20,400
+Then accesses the key.
+
+14
+00:00:20,400 --> 00:00:22,200
+The merchant requests payment.
+
+15
+00:00:22,200 --> 00:00:24,000
+A facilitator submits it.
+
+16
+00:00:24,000 --> 00:00:26,000
+The chain settles.
+
+17
+00:00:26,000 --> 00:00:27,600
+The agent orders.
+
+18
+00:00:27,600 --> 00:00:30,000
+One and a half USDC.
+
+19
+00:00:30,000 --> 00:00:32,000
+Then asks to pay.
+
+20
+00:00:32,000 --> 00:00:34,000
+Payment required.
+
+21
+00:00:34,000 --> 00:00:36,400
+The service checks the terms.
+
+22
+00:00:36,400 --> 00:00:39,600
+Saves a nonce and expiry.
+
+23
+00:00:39,600 --> 00:00:42,000
+Then seals the intent.
+
+24
+00:00:42,000 --> 00:00:44,400
+The sealed intent enters Basis Theory.
+
+25
+00:00:44,400 --> 00:00:46,400
+The signer checks the seal.
+
+26
+00:00:46,400 --> 00:00:48,400
+Then all five fixed rules.
+
+27
+00:00:48,400 --> 00:00:50,600
+Only then can it sign.
+
+28
+00:00:50,600 --> 00:00:53,000
+The signature leaves. The key stays.
+
+29
+00:00:53,000 --> 00:00:55,000
+The service checks the signature.
+
+30
+00:00:55,000 --> 00:00:56,800
+Merchant records the claim.
+
+31
+00:00:56,800 --> 00:00:58,200
+Verified. Submitting.
+
+32
+00:00:58,200 --> 00:01:00,000
+USDC moves on chain.
+
+33
+00:01:00,000 --> 00:01:02,000
+Confirmed. The receipt returns.
+
+34
+00:01:02,000 --> 00:01:05,200
+A separate request names an unlisted payee.
+
+35
+00:01:05,200 --> 00:01:07,600
+The seal passes. The payee fails.
+
+36
+00:01:07,600 --> 00:01:10,000
+Refused. No signature. No transfer.
+
+37
+00:01:10,000 --> 00:01:12,000
+Pay the same order again.
+
+38
+00:01:12,000 --> 00:01:14,000
+The ledger finds its receipt.
+
+39
+00:01:14,000 --> 00:01:16,000
+One transfer. Same receipt.
+
+40
+00:01:16,000 --> 00:01:17,600
+Wallet key: Basis Theory.
+
+41
+00:01:17,600 --> 00:01:19,200
+Seal key: shared authentication.
+
+42
+00:01:19,200 --> 00:01:20,400
+Invoker: invoke only.
+
+43
+00:01:20,400 --> 00:01:21,600
+Management: operator only.
+
+44
+00:01:21,600 --> 00:01:22,800
+Provisioner: one-time use.
+
+45
+00:01:22,800 --> 00:01:24,400
+Agent: no buyer keys.
+
+46
+00:01:24,400 --> 00:01:26,000
+Merchant: no buyer keys.
+
+47
+00:01:26,000 --> 00:01:27,000
+Policy decides.
+
+48
+00:01:27,000 --> 00:01:28,500
+The signer signs.
+
+49
+00:01:28,500 --> 00:01:30,000
+The chain settles.

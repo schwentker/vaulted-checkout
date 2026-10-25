@@ -1,0 +1,394 @@
+[
+  {
+    "scene": "S0",
+    "beat": 1,
+    "startFrame": 0,
+    "endFrame": 30,
+    "narration": "A buyer.",
+    "sfx": null
+  },
+  {
+    "scene": "S0",
+    "beat": 2,
+    "startFrame": 30,
+    "endFrame": 66,
+    "narration": "An agent buys.",
+    "sfx": null
+  },
+  {
+    "scene": "S0",
+    "beat": 3,
+    "startFrame": 66,
+    "endFrame": 108,
+    "narration": "In testnet USDC.",
+    "sfx": null
+  },
+  {
+    "scene": "S0",
+    "beat": 4,
+    "startFrame": 108,
+    "endFrame": 180,
+    "narration": "Basis Theory holds the key.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 1,
+    "startFrame": 180,
+    "endFrame": 210,
+    "narration": "The buyer.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 2,
+    "startFrame": 210,
+    "endFrame": 252,
+    "narration": "Its agent shops.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 3,
+    "startFrame": 252,
+    "endFrame": 306,
+    "narration": "The spend service decides.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 4,
+    "startFrame": 306,
+    "endFrame": 348,
+    "narration": "Through fixed tools.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 5,
+    "startFrame": 348,
+    "endFrame": 390,
+    "narration": "It checks policy.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 6,
+    "startFrame": 390,
+    "endFrame": 432,
+    "narration": "Keeps a ledger.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 7,
+    "startFrame": 432,
+    "endFrame": 474,
+    "narration": "Seals approved intents.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 8,
+    "startFrame": 474,
+    "endFrame": 564,
+    "narration": "Basis Theory checks five fixed rules.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 9,
+    "startFrame": 564,
+    "endFrame": 612,
+    "narration": "Then accesses the key.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 10,
+    "startFrame": 612,
+    "endFrame": 666,
+    "narration": "The merchant requests payment.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 11,
+    "startFrame": 666,
+    "endFrame": 720,
+    "narration": "A facilitator submits it.",
+    "sfx": null
+  },
+  {
+    "scene": "S1",
+    "beat": 12,
+    "startFrame": 720,
+    "endFrame": 780,
+    "narration": "The chain settles.",
+    "sfx": null
+  },
+  {
+    "scene": "S2",
+    "beat": 1,
+    "startFrame": 780,
+    "endFrame": 828,
+    "narration": "The agent orders.",
+    "sfx": null
+  },
+  {
+    "scene": "S2",
+    "beat": 2,
+    "startFrame": 828,
+    "endFrame": 900,
+    "narration": "One and a half USDC.",
+    "sfx": null
+  },
+  {
+    "scene": "S2",
+    "beat": 3,
+    "startFrame": 900,
+    "endFrame": 960,
+    "narration": "Then asks to pay.",
+    "sfx": null
+  },
+  {
+    "scene": "S2",
+    "beat": 4,
+    "startFrame": 960,
+    "endFrame": 1020,
+    "narration": "Payment required.",
+    "sfx": null
+  },
+  {
+    "scene": "S3",
+    "beat": 1,
+    "startFrame": 1020,
+    "endFrame": 1092,
+    "narration": "The service checks the terms.",
+    "sfx": null
+  },
+  {
+    "scene": "S3",
+    "beat": 2,
+    "startFrame": 1092,
+    "endFrame": 1188,
+    "narration": "Saves a nonce and expiry.",
+    "sfx": null
+  },
+  {
+    "scene": "S3",
+    "beat": 3,
+    "startFrame": 1188,
+    "endFrame": 1260,
+    "narration": "Then seals the intent.",
+    "sfx": "seal"
+  },
+  {
+    "scene": "S4",
+    "beat": 1,
+    "startFrame": 1260,
+    "endFrame": 1332,
+    "narration": "The sealed intent enters Basis Theory.",
+    "sfx": null
+  },
+  {
+    "scene": "S4",
+    "beat": 2,
+    "startFrame": 1332,
+    "endFrame": 1392,
+    "narration": "The signer checks the seal.",
+    "sfx": "tick"
+  },
+  {
+    "scene": "S4",
+    "beat": 3,
+    "startFrame": 1392,
+    "endFrame": 1452,
+    "narration": "Then all five fixed rules.",
+    "sfx": "rules"
+  },
+  {
+    "scene": "S4",
+    "beat": 4,
+    "startFrame": 1452,
+    "endFrame": 1518,
+    "narration": "Only then can it sign.",
+    "sfx": "signature"
+  },
+  {
+    "scene": "S4",
+    "beat": 5,
+    "startFrame": 1518,
+    "endFrame": 1590,
+    "narration": "The signature leaves. The key stays.",
+    "sfx": null
+  },
+  {
+    "scene": "S5",
+    "beat": 1,
+    "startFrame": 1590,
+    "endFrame": 1650,
+    "narration": "The service checks the signature.",
+    "sfx": null
+  },
+  {
+    "scene": "S5",
+    "beat": 2,
+    "startFrame": 1650,
+    "endFrame": 1704,
+    "narration": "Merchant records the claim.",
+    "sfx": null
+  },
+  {
+    "scene": "S5",
+    "beat": 3,
+    "startFrame": 1704,
+    "endFrame": 1746,
+    "narration": "Verified. Submitting.",
+    "sfx": null
+  },
+  {
+    "scene": "S5",
+    "beat": 4,
+    "startFrame": 1746,
+    "endFrame": 1800,
+    "narration": "USDC moves on chain.",
+    "sfx": null
+  },
+  {
+    "scene": "S5",
+    "beat": 5,
+    "startFrame": 1800,
+    "endFrame": 1860,
+    "narration": "Confirmed. The receipt returns.",
+    "sfx": "confirmed"
+  },
+  {
+    "scene": "S6",
+    "beat": 1,
+    "startFrame": 1860,
+    "endFrame": 1956,
+    "narration": "A separate request names an unlisted payee.",
+    "sfx": null
+  },
+  {
+    "scene": "S6",
+    "beat": 2,
+    "startFrame": 1956,
+    "endFrame": 2028,
+    "narration": "The seal passes. The payee fails.",
+    "sfx": null
+  },
+  {
+    "scene": "S6",
+    "beat": 3,
+    "startFrame": 2028,
+    "endFrame": 2100,
+    "narration": "Refused. No signature. No transfer.",
+    "sfx": "refusal"
+  },
+  {
+    "scene": "S7",
+    "beat": 1,
+    "startFrame": 2100,
+    "endFrame": 2160,
+    "narration": "Pay the same order again.",
+    "sfx": null
+  },
+  {
+    "scene": "S7",
+    "beat": 2,
+    "startFrame": 2160,
+    "endFrame": 2220,
+    "narration": "The ledger finds its receipt.",
+    "sfx": "ledger"
+  },
+  {
+    "scene": "S7",
+    "beat": 3,
+    "startFrame": 2220,
+    "endFrame": 2280,
+    "narration": "One transfer. Same receipt.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 1,
+    "startFrame": 2280,
+    "endFrame": 2328,
+    "narration": "Wallet key: Basis Theory.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 2,
+    "startFrame": 2328,
+    "endFrame": 2376,
+    "narration": "Seal key: shared authentication.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 3,
+    "startFrame": 2376,
+    "endFrame": 2412,
+    "narration": "Invoker: invoke only.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 4,
+    "startFrame": 2412,
+    "endFrame": 2448,
+    "narration": "Management: operator only.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 5,
+    "startFrame": 2448,
+    "endFrame": 2484,
+    "narration": "Provisioner: one-time use.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 6,
+    "startFrame": 2484,
+    "endFrame": 2532,
+    "narration": "Agent: no buyer keys.",
+    "sfx": null
+  },
+  {
+    "scene": "S8",
+    "beat": 7,
+    "startFrame": 2532,
+    "endFrame": 2580,
+    "narration": "Merchant: no buyer keys.",
+    "sfx": null
+  },
+  {
+    "scene": "S9",
+    "beat": 1,
+    "startFrame": 2580,
+    "endFrame": 2610,
+    "narration": "Policy decides.",
+    "sfx": null
+  },
+  {
+    "scene": "S9",
+    "beat": 2,
+    "startFrame": 2610,
+    "endFrame": 2655,
+    "narration": "The signer signs.",
+    "sfx": null
+  },
+  {
+    "scene": "S9",
+    "beat": 3,
+    "startFrame": 2655,
+    "endFrame": 2700,
+    "narration": "The chain settles.",
+    "sfx": null
+  }
+]

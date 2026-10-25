@@ -1,0 +1,140 @@
+{
+  "output": "vaulted-checkout-first-15s.mp4",
+  "durationSeconds": 15,
+  "frames": 450,
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "voiceId": "bGaO5vdJcnB4WojYqfuK",
+  "model": "eleven_multilingual_v2",
+  "voiceSettings": {
+    "stability": 0.6,
+    "similarity_boost": 0.8,
+    "style": 0.05,
+    "use_speaker_boost": true,
+    "speed": 1.2
+  },
+  "segments": [
+    {
+      "scene": "S0",
+      "step": 1,
+      "cue": "A buyer.",
+      "start": 0.0,
+      "end": 1.0,
+      "sourceStart": 0,
+      "sourceEnd": 0.6980000000000001,
+      "tempo": 1.0,
+      "speechStart": 0.025,
+      "speechEnd": 0.7176875
+    },
+    {
+      "scene": "S0",
+      "step": 2,
+      "cue": "An agent buys.",
+      "start": 1.0,
+      "end": 2.2,
+      "sourceStart": 0.833,
+      "sourceEnd": 2.1839999999999997,
+      "tempo": 1.179912663755458,
+      "speechStart": 1.025,
+      "speechEnd": 2.1820625
+    },
+    {
+      "scene": "S0",
+      "step": 3,
+      "cue": "In testnet USDC.",
+      "start": 2.2,
+      "end": 3.6,
+      "sourceStart": 2.377,
+      "sourceEnd": 4.216,
+      "tempo": 1.3672862453531602,
+      "speechStart": 2.225,
+      "speechEnd": 3.575645833333333
+    },
+    {
+      "scene": "S0",
+      "step": 4,
+      "cue": "Basis Theory holds the key.",
+      "start": 3.6,
+      "end": 6.0,
+      "sourceStart": 4.501,
+      "sourceEnd": 6.492,
+      "tempo": 1.0,
+      "speechStart": 3.625,
+      "speechEnd": 5.612729166666667
+    },
+    {
+      "scene": "S1",
+      "step": 1,
+      "cue": "The buyer.",
+      "start": 6.0,
+      "end": 7.0,
+      "sourceStart": 6.719,
+      "sourceEnd": 7.548,
+      "tempo": 1.0,
+      "speechStart": 6.025,
+      "speechEnd": 6.8468333333333335
+    },
+    {
+      "scene": "S1",
+      "step": 2,
+      "cue": "Its agent shops.",
+      "start": 7.0,
+      "end": 8.4,
+      "sourceStart": 7.648000000000001,
+      "sourceEnd": 9.127,
+      "tempo": 1.0996282527881038,
+      "speechStart": 7.025,
+      "speechEnd": 8.388458333333332
+    },
+    {
+      "scene": "S1",
+      "step": 3,
+      "cue": "The spend service decides.",
+      "start": 8.4,
+      "end": 10.2,
+      "sourceStart": 9.354,
+      "sourceEnd": 11.089,
+      "tempo": 1.0,
+      "speechStart": 8.425,
+      "speechEnd": 10.154604166666667
+    },
+    {
+      "scene": "S1",
+      "step": 4,
+      "cue": "Through fixed tools.",
+      "start": 10.2,
+      "end": 11.6,
+      "sourceStart": 11.315999999999999,
+      "sourceEnd": 12.575000000000001,
+      "tempo": 1.0,
+      "speechStart": 10.225,
+      "speechEnd": 11.477708333333334
+    },
+    {
+      "scene": "S1",
+      "step": 5,
+      "cue": "It checks policy.",
+      "start": 11.6,
+      "end": 13.0,
+      "sourceStart": 12.663,
+      "sourceEnd": 13.911,
+      "tempo": 1.0,
+      "speechStart": 11.625,
+      "speechEnd": 12.865916666666667
+    },
+    {
+      "scene": "S1",
+      "step": 6,
+      "cue": "Keeps a ledger.",
+      "start": 13.0,
+      "end": 14.4,
+      "sourceStart": 14.08,
+      "sourceEnd": 15.35,
+      "tempo": 1.0,
+      "speechStart": 13.025,
+      "speechEnd": 14.262
+    }
+  ],
+  "ending": "Next visual beat begins at 14.4 seconds. Its narration continues beyond this preview and is omitted here."
+}

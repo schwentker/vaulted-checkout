@@ -1,0 +1,15 @@
+{
+  "artifactRef": "artifact_VvbnjJtOKIBryWexpz5gdI-fbhjPs1pF",
+  "artifactType": "presentation",
+  "title": "Vaulted Checkout progressive storyboard",
+  "slides": 49,
+  "scenes": 10,
+  "logicalWidth": 1280,
+  "logicalHeight": 720,
+  "previewWidth": 1920,
+  "previewHeight": 1080,
+  "timingStatus": "49 timed beats at 30 fps. Voice-over synthesis remains pending.",
+  "durationSeconds": 90,
+  "fps": 30,
+  "stateVersion": 6
+}
