@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spend Theater scoreboard</title>
+<style>
+:root{--paper:#f3ead7;--ink:#1d2433;--blue:#163f78;--red:#ad2424;--muted:#6b6457}
+body{margin:0;padding:24px 16px;background:var(--paper);color:var(--ink);font:15px/1.45 system-ui,sans-serif}
+main{max-width:1200px;margin:0 auto}h1{color:var(--blue);margin:0 0 8px}
+.summary{font-size:17px;margin:12px 0 20px;padding:12px 14px;background:#fff8e6;border-left:4px solid var(--red)}
+.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;background:#fffdf7}
+th,td{border:1px solid #d8ccb2;padding:6px 8px;text-align:center;vertical-align:middle}
+thead th{background:#ece1c8}.group-frozen{background:#dbe5f3!important}.group-model{background:#f6e3c4!important}
+td.na{color:var(--muted)}img{width:200px;height:auto;display:block}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px}
+.pair figure{margin:0}.pair img{width:100%}.pair video{width:100%}
+small{color:var(--muted)}
+</style></head><body><main>
+<h1>Spend Theater scoreboard</h1>
+<p class="summary">Frozen checks improved from iteration 0 to the last: total_bad 3 -&gt; 0. Stopped early at iteration 1: critic verdict pass and total_bad 0.</p>
+<div class="wrap"><table>
+<thead><tr><th rowspan="2">Iteration</th><th class="group-frozen" colspan="5">Frozen checks (deterministic, theater/eval)</th><th class="group-model" colspan="6">model-judged, same model family as the generator (0 to 10)</th><th rowspan="2">Still</th><th rowspan="2">Video</th></tr>
+<tr><th class="group-frozen">contradictions</th><th class="group-frozen">order_errors</th><th class="group-frozen">amount_errors</th><th class="group-frozen">render_failures</th><th class="group-frozen">total_bad</th><th class="group-model">legibility</th><th class="group-model">sequence</th><th class="group-model">beat_discipline</th><th class="group-model">style</th><th class="group-model">truth_visual</th><th class="group-model">verdict</th></tr></thead>
+<tbody>
+<tr><th>0</th><td>0</td><td>0</td><td>0</td><td>3</td><td>3</td><td>6</td><td>8</td><td>8</td><td>9</td><td>9</td><td>revise</td><td><a href="0/frame-4.png"><img src="0/frame-4.png" alt="iteration 0 still" loading="lazy"></a></td><td><a href="0/render.webm">render.webm</a></td></tr>
+<tr><th>1</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>9</td><td>9</td><td>9</td><td>10</td><td>10</td><td>pass</td><td><a href="1/frame-4.png"><img src="1/frame-4.png" alt="iteration 1 still" loading="lazy"></a></td><td><a href="1/render.webm">render.webm</a></td></tr>
+</tbody></table></div>
+<p><small>Every iteration is listed. Frozen counts come from theater/eval/checks.mjs and match results.json. Model-judged scores never change the frozen counts.</small></p>
+<h2>Iteration 0 vs iteration 1</h2>
+<div class="pair"><figure><video src="0/render.webm" controls preload="metadata" poster="0/frame-4.png"></video><figcaption>Iteration 0: total_bad 3</figcaption></figure><figure><video src="1/render.webm" controls preload="metadata" poster="1/frame-4.png"></video><figcaption>Iteration 1: total_bad 0</figcaption></figure></div>
+</main></body></html>

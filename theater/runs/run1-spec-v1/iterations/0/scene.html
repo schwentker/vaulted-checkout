@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spend Theater — Payment Log Replay</title>
+  <link rel="icon" href="data:," />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f3ead7;
+      color: #1e1b18;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #stage-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 42%, #f8f1e2 0%, #f3ead7 65%, #e7dcc5 100%);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #overlay-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .station-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: rgba(243, 234, 215, 0.94);
+      border: 1.5px solid #2c2621;
+      color: #1e1b18;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      box-shadow: 0 2px 5px rgba(30, 27, 24, 0.12);
+    }
+    .outcome-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      padding: 7px 12px;
+      border-radius: 7px;
+      font-size: 16px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(20, 18, 15, 0.18);
+      display: none;
+      align-items: center;
+      gap: 7px;
+      line-height: 1.2;
+    }
+    .outcome-label.refusal-badge {
+      background: #184ea8;
+      color: #ffffff;
+      border: 2px solid #0d2c63;
+    }
+    .outcome-label.settled-badge {
+      background: #c92f29;
+      color: #ffffff;
+      border: 2px solid #7d1814;
+    }
+    .outcome-label .badge-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 900;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .outcome-label .oid-token {
+      font-size: 10px;
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      opacity: 0.88;
+      background: rgba(0, 0, 0, 0.22);
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+    #caption-bar {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      min-width: 78%;
+      max-width: 94%;
+      min-height: 68px;
+      background: #fbf6eb;
+      border: 2.5px solid #231f1c;
+      border-radius: 10px;
+      padding: 14px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 20px rgba(35, 31, 28, 0.15);
+      transition: opacity 0.2s ease;
+    }
+    #caption-text {
+      font-size: 30px;
+      font-weight: 750;
+      color: #191614;
+      line-height: 1.25;
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+    #caption-text .caption-oid {
+      display: inline-block;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #4a423b;
+      background: #e9dec8;
+      border: 1px solid #b8ab93;
+      padding: 2px 7px;
+      border-radius: 5px;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <script type="application/json" id="events">
+[{"t":0,"actor":"vault","kind":"refused","orderId":"ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa","code":"rule_payto"},{"t":1000,"actor":"chain","kind":"settled","orderId":"ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d","amount":"1.5","txHash":"0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a"}]
+  </script>
+
+  <script>
+    (function () {
+      const DURATION = 35;
+      const DURATION_MS = DURATION * 1000;
+      const startTime = performance.now();
+
+      const _marks = [];
+      const _labels = [
+        { text: "Buyer", t: 0 },
+        { text: "Gemini Agent", t: 0 },
+        { text: "Spend Policy", t: 0 },
+        { text: "Basis Theory Vault", t: 0 },
+        { text: "Merchant", t: 0 },
+        { text: "Base Sepolia", t: 0 }
+      ];
+      const _elements = [
+        { name: "buyer", visibleFrom: 0, visibleTo: DURATION_MS },
+        { name: "agent", visibleFrom: 0, visibleTo: DURATION_MS },
+        { name: "spend", visibleFrom: 0, visibleTo: DURATION_MS },
+        { name: "vault", visibleFrom: 0, visibleTo: DURATION_MS },
+        { name: "merchant", visibleFrom: 0, visibleTo: DURATION_MS },
+        { name: "chain", visibleFrom: 0, visibleTo: DURATION_MS }
+      ];
+
+      window.__theater = {
+        duration: DURATION,
+        marks: _marks,
+        done: false,
+        snapshot: function () {
+          return {
+            labels: _labels.map(function (l) {
+              const copy = { text: l.text, t: l.t };
+              if (l.orderId) copy.orderId = l.orderId;
+              return copy;
+            }),
+            elements: _elements.map(function (e) {
+              const copy = {
+                name: e.name,
+                visibleFrom: e.visibleFrom,
+                visibleTo: e.visibleTo
+              };
+              if (e.orderId) copy.orderId = e.orderId;
+              return copy;
+            })
+          };
+        },
+        _internal: {
+          startTime: startTime,
+          durationMs: DURATION_MS,
+          labels: _labels,
+          elements: _elements,
+          addLabel: function (text, t, orderId) {
+            const entry = { text: text, t: Math.round(t) };
+            if (orderId) entry.orderId = orderId;
+            _labels.push(entry);
+          },
+          addElement: function (name, t, orderId) {
+            const existing = _elements.find(function (el) {
+              return el.name === name && el.orderId === orderId;
+            });
+            if (existing) return existing;
+            const entry = {
+              name: name,
+              visibleFrom: Math.round(t),
+              visibleTo: DURATION_MS
+            };
+            if (orderId) entry.orderId = orderId;
+            _elements.push(entry);
+            return entry;
+          },
+          closeElement: function (name, t) {
+            const existing = _elements.find(function (el) {
+              return el.name === name;
+            });
+            if (existing && existing.visibleTo === DURATION_MS) {
+              existing.visibleTo = Math.round(t);
+            }
+          }
+        }
+      };
+    })();
+  </script>
+
+  <div id="stage-container">
+    <div id="overlay-layer">
+      <div id="lbl-buyer" class="station-label">Buyer</div>
+      <div id="lbl-agent" class="station-label">Gemini Agent</div>
+      <div id="lbl-spend" class="station-label">Spend Policy</div>
+      <div id="lbl-vault" class="station-label">Basis Theory Vault</div>
+      <div id="lbl-merchant" class="station-label">Merchant</div>
+      <div id="lbl-chain" class="station-label">Base Sepolia</div>
+
+      <div id="lbl-refusal" class="outcome-label refusal-badge"></div>
+      <div id="lbl-settled" class="outcome-label settled-badge"></div>
+
+      <div id="caption-bar" style="opacity: 0;">
+        <div id="caption-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
+
+    const rawEvents = JSON.parse(document.getElementById("events").textContent.trim());
+    const theater = window.__theater;
+    const internal = theater._internal;
+    const startTime = internal.startTime;
+
+    const container = document.getElementById("stage-container");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf3ead7);
+
+    const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 6.0, 22.8);
+    camera.lookAt(0, 0.7, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.insertBefore(renderer.domElement, document.getElementById("overlay-layer"));
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.45);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffdf8, 1.35);
+    dirLight.position.set(6, 16, 14);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(1024, 1024);
+    dirLight.shadow.camera.left = -15;
+    dirLight.shadow.camera.right = 15;
+    dirLight.shadow.camera.top = 10;
+    dirLight.shadow.camera.bottom = -10;
+    scene.add(dirLight);
+
+    // Palette Constants (strictly following spec)
+    const COL_PAPER = 0xf3ead7;
+    const COL_PAPER_DARK = 0xe3d5b8;
+    const COL_SAND = 0xd6c4a0;
+    const COL_INK = 0x231f1c;
+    const COL_BLUE = 0x1d5bbf;
+    const COL_BLUE_DARK = 0x103678;
+    const COL_BLUE_LIGHT = 0x5ea1ff;
+    const COL_RED = 0xc9312b;
+    const COL_RED_LIGHT = 0xff5a52;
+    const COL_YELLOW = 0xf2b718;
+    const COL_YELLOW_LIGHT = 0xffe066;
+
+    // Stage Floor & Track
+    const stageFloor = new THREE.Mesh(
+      new THREE.BoxGeometry(24.5, 0.35, 7.5),
+      new THREE.MeshStandardMaterial({ color: COL_PAPER_DARK, roughness: 0.9 })
+    );
+    stageFloor.position.set(0, -0.18, 0);
+    stageFloor.receiveShadow = true;
+    scene.add(stageFloor);
+
+    const stageTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(24.7, 0.08, 7.7),
+      new THREE.MeshStandardMaterial({ color: COL_INK, roughness: 0.8 })
+    );
+    stageTrim.position.set(0, -0.36, 0);
+    scene.add(stageTrim);
+
+    // Guide path connecting stations
+    const trackLine = new THREE.Mesh(
+      new THREE.BoxGeometry(19.0, 0.05, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0xc8b796, roughness: 0.85 })
+    );
+    trackLine.position.set(0, 0.02, 0.55);
+    scene.add(trackLine);
+
+    // Station X Coordinates (left to right, all well inside 1280x720 frame)
+    const X_POS = {
+      buyer: -9.5,
+      agent: -5.7,
+      spend: -1.9,
+      vault: 1.9,
+      merchant: 5.7,
+      chain: 9.5
+    };
+
+    function createPedestal(x) {
+      const group = new THREE.Group();
+      group.position.set(x, 0, 0);
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(2.7, 0.22, 2.5),
+        new THREE.MeshStandardMaterial({ color: 0xdfd0b2, roughness: 0.85 })
+      );
+      base.position.y = 0.11;
+      base.receiveShadow = true;
+      group.add(base);
+
+      const rim = new THREE.Mesh(
+        new THREE.BoxGeometry(2.76, 0.05, 2.56),
+        new THREE.MeshStandardMaterial({ color: COL_INK, roughness: 0.8 })
+      );
+      rim.position.y = 0.23;
+      group.add(rim);
+      scene.add(group);
+      return group;
+    }
+
+    // 1. BUYER STATION: Small building, paper tones
+    const buyerGroup = createPedestal(X_POS.buyer);
+    {
+      const mainBldg = new THREE.Mesh(
+        new THREE.BoxGeometry(1.75, 1.65, 1.45),
+        new THREE.MeshStandardMaterial({ color: 0xe9ddc6, roughness: 0.8 })
+      );
+      mainBldg.position.set(0, 1.05, 0);
+      mainBldg.castShadow = true;
+      buyerGroup.add(mainBldg);
+
+      // Pitched roof
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(1.42, 0.8, 4),
+        new THREE.MeshStandardMaterial({ color: COL_SAND, roughness: 0.75 })
+      );
+      roof.position.set(0, 2.27, 0);
+      roof.rotation.y = Math.PI / 4;
+      buyerGroup.add(roof);
+
+      // Door & Windows in paper/ink tones
+      const door = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 0.72, 0.06),
+        new THREE.MeshStandardMaterial({ color: COL_INK })
+      );
+      door.position.set(0, 0.6, 0.73);
+      buyerGroup.add(door);
+
+      for (const wx of [-0.45, 0.45]) {
+        const win = new THREE.Mesh(
+          new THREE.BoxGeometry(0.34, 0.34, 0.06),
+          new THREE.MeshStandardMaterial({ color: 0xc7b698 })
+        );
+        win.position.set(wx, 1.35, 0.73);
+        buyerGroup.add(win);
+      }
+    }
+
+    // 2. GEMINI AGENT STATION: Terminal/figure, paper tones with yellow message accents
+    const agentGroup = createPedestal(X_POS.agent);
+    {
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.35, 1.55, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xe8dbc1, roughness: 0.75 })
+      );
+      body.position.set(0, 1.0, 0);
+      body.castShadow = true;
+      agentGroup.add(body);
+
+      const screen = new THREE.Mesh(
+        new THREE.BoxGeometry(1.08, 0.82, 0.08),
+        new THREE.MeshStandardMaterial({ color: COL_INK, roughness: 0.4 })
+      );
+      screen.position.set(0, 1.15, 0.54);
+      agentGroup.add(screen);
+
+      // Yellow message accents on screen & beacon
+      for (let i = 0; i < 3; i++) {
+        const bar = new THREE.Mesh(
+          new THREE.BoxGeometry(0.76 - i * 0.14, 0.1, 0.04),
+          new THREE.MeshStandardMaterial({
+            color: COL_YELLOW,
+            emissive: COL_YELLOW,
+            emissiveIntensity: 0.45
+          })
+        );
+        bar.position.set(-0.06 * i, 1.33 - i * 0.19, 0.58);
+        agentGroup.add(bar);
+      }
+
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.42, 12),
+        new THREE.MeshStandardMaterial({ color: COL_INK })
+      );
+      stem.position.set(0, 1.98, 0);
+      agentGroup.add(stem);
+
+      const beacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 16, 16),
+        new THREE.MeshStandardMaterial({
+          color: COL_YELLOW,
+          emissive: COL_YELLOW,
+          emissiveIntensity: 0.55
+        })
+      );
+      beacon.position.set(0, 2.25, 0);
+      agentGroup.add(beacon);
+    }
+
+    // 3. SPEND POLICY STATION: Gate or checkpoint
+    const spendGroup = createPedestal(X_POS.spend);
+    let spendGateBar;
+    {
+      const leftPillar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 2.15, 0.42),
+        new THREE.MeshStandardMaterial({ color: 0xe5d7bc, roughness: 0.8 })
+      );
+      leftPillar.position.set(-0.78, 1.3, 0);
+      leftPillar.castShadow = true;
+      spendGroup.add(leftPillar);
+
+      const rightPillar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 2.15, 0.42),
+        new THREE.MeshStandardMaterial({ color: 0xe5d7bc, roughness: 0.8 })
+      );
+      rightPillar.position.set(0.78, 1.3, 0);
+      rightPillar.castShadow = true;
+      spendGroup.add(rightPillar);
+
+      const header = new THREE.Mesh(
+        new THREE.BoxGeometry(2.15, 0.42, 0.54),
+        new THREE.MeshStandardMaterial({ color: COL_INK, roughness: 0.7 })
+      );
+      header.position.set(0, 2.45, 0);
+      spendGroup.add(header);
+
+      // Checkpoint barrier arm
+      spendGateBar = new THREE.Mesh(
+        new THREE.BoxGeometry(1.35, 0.14, 0.14),
+        new THREE.MeshStandardMaterial({ color: COL_SAND, roughness: 0.6 })
+      );
+      spendGateBar.position.set(0, 1.28, 0.35);
+      spendGroup.add(spendGateBar);
+    }
+
+    // 4. BASIS THEORY VAULT STATION: Blue vault box; key drawn inside and NEVER leaves it
+    const vaultGroup = createPedestal(X_POS.vault);
+    const vaultKeyGroup = new THREE.Group();
+    let vaultInteriorLight;
+    {
+      // Back & sides of blue vault box (recessed display chamber so key is clearly visible inside)
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 2.2, 0.35),
+        new THREE.MeshStandardMaterial({ color: COL_BLUE, roughness: 0.45, metalness: 0.25 })
+      );
+      backWall.position.set(0, 1.32, -0.45);
+      backWall.castShadow = true;
+      vaultGroup.add(backWall);
+
+      const leftWall = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 2.2, 1.25),
+        new THREE.MeshStandardMaterial({ color: COL_BLUE, roughness: 0.45, metalness: 0.25 })
+      );
+      leftWall.position.set(-0.89, 1.32, 0);
+      vaultGroup.add(leftWall);
+
+      const rightWall = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 2.2, 1.25),
+        new THREE.MeshStandardMaterial({ color: COL_BLUE, roughness: 0.45, metalness: 0.25 })
+      );
+      rightWall.position.set(0.89, 1.32, 0);
+      vaultGroup.add(rightWall);
+
+      const topWall = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.32, 1.25),
+        new THREE.MeshStandardMaterial({ color: COL_BLUE, roughness: 0.45, metalness: 0.25 })
+      );
+      topWall.position.set(0, 2.26, 0);
+      vaultGroup.add(topWall);
+
+      const bottomWall = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.28, 1.25),
+        new THREE.MeshStandardMaterial({ color: COL_BLUE_DARK, roughness: 0.5 })
+      );
+      bottomWall.position.set(0, 0.36, 0);
+      vaultGroup.add(bottomWall);
+
+      // Dark blue interior backing plate to contrast the key
+      const innerPlate = new THREE.Mesh(
+        new THREE.BoxGeometry(1.42, 1.56, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x0a224e, roughness: 0.6 })
+      );
+      innerPlate.position.set(0, 1.32, -0.22);
+      vaultGroup.add(innerPlate);
+
+      // Stationary Key drawn inside the vault (NEVER moves, NEVER leaves the vault)
+      const keyMat = new THREE.MeshStandardMaterial({
+        color: 0xdbeafe,
+        emissive: 0x3b82f6,
+        emissiveIntensity: 0.4,
+        roughness: 0.25,
+        metalness: 0.5
+      });
+
+      const keyBow = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.065, 16, 28), keyMat);
+      keyBow.position.set(-0.28, 0, 0);
+      vaultKeyGroup.add(keyBow);
+
+      const keyShaft = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.11, 0.09), keyMat);
+      keyShaft.position.set(0.14, 0, 0);
+      vaultKeyGroup.add(keyShaft);
+
+      const keyTooth1 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.2, 0.09), keyMat);
+      keyTooth1.position.set(0.24, -0.13, 0);
+      vaultKeyGroup.add(keyTooth1);
+
+      const keyTooth2 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.15, 0.09), keyMat);
+      keyTooth2.position.set(0.39, -0.1, 0);
+      vaultKeyGroup.add(keyTooth2);
+
+      vaultKeyGroup.position.set(0, 1.34, 0.08);
+      vaultGroup.add(vaultKeyGroup);
+
+      vaultInteriorLight = new THREE.PointLight(0x60a5fa, 0.8, 3.0);
+      vaultInteriorLight.position.set(0, 1.34, 0.45);
+      vaultGroup.add(vaultInteriorLight);
+    }
+
+    // Refusal Mark on the Vault (hidden until refused event)
+    const refusalSealGroup = new THREE.Group();
+    {
+      const sealDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.46, 0.46, 0.12, 28),
+        new THREE.MeshStandardMaterial({
+          color: COL_BLUE,
+          emissive: 0x103678,
+          emissiveIntensity: 0.35,
+          roughness: 0.35
+        })
+      );
+      sealDisc.rotation.x = Math.PI / 2;
+      refusalSealGroup.add(sealDisc);
+
+      const sealRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.46, 0.045, 12, 28),
+        new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.3 })
+      );
+      sealRim.position.z = 0.04;
+      refusalSealGroup.add(sealRim);
+
+      // Bold cross inside the blue seal
+      const crossMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.5
+      });
+      const crossBar1 = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.11, 0.08), crossMat);
+      crossBar1.rotation.z = Math.PI / 4;
+      crossBar1.position.z = 0.08;
+      refusalSealGroup.add(crossBar1);
+
+      const crossBar2 = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.11, 0.08), crossMat);
+      crossBar2.rotation.z = -Math.PI / 4;
+      crossBar2.position.z = 0.08;
+      refusalSealGroup.add(crossBar2);
+
+      refusalSealGroup.position.set(-0.62, 1.98, 0.72);
+      refusalSealGroup.visible = false;
+      vaultGroup.add(refusalSealGroup);
+    }
+
+    // Blue Approval Seal on the Vault (hidden until settled packet reaches vault)
+    const vaultBlueSealGroup = new THREE.Group();
+    {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.36, 0.06, 12, 24),
+        new THREE.MeshStandardMaterial({
+          color: COL_BLUE_LIGHT,
+          emissive: COL_BLUE,
+          emissiveIntensity: 0.7
+        })
+      );
+      vaultBlueSealGroup.add(ring);
+      vaultBlueSealGroup.position.set(0.62, 1.98, 0.72);
+      vaultBlueSealGroup.visible = false;
+      vaultGroup.add(vaultBlueSealGroup);
+    }
+
+    // 5. MERCHANT STATION: Storefront; dark until it is paid
+    const merchantGroup = createPedestal(X_POS.merchant);
+    const merchantBodyMat = new THREE.MeshStandardMaterial({ color: 0x24211e, roughness: 0.85 });
+    const merchantAwningMat = new THREE.MeshStandardMaterial({ color: 0x1b1917, roughness: 0.8 });
+    const merchantWinMat = new THREE.MeshStandardMaterial({
+      color: 0x151311,
+      emissive: 0x000000,
+      emissiveIntensity: 0.0,
+      roughness: 0.5
+    });
+    let merchantGlowLight;
+    {
+      const shopBody = new THREE.Mesh(new THREE.BoxGeometry(1.85, 1.75, 1.4), merchantBodyMat);
+      shopBody.position.set(0, 1.1, 0);
+      shopBody.castShadow = true;
+      merchantGroup.add(shopBody);
+
+      const awning = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.28, 0.65), merchantAwningMat);
+      awning.position.set(0, 1.62, 0.58);
+      awning.rotation.x = 0.22;
+      merchantGroup.add(awning);
+
+      const leftWindow = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.06), merchantWinMat);
+      leftWindow.position.set(-0.42, 0.98, 0.71);
+      merchantGroup.add(leftWindow);
+
+      const rightWindow = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.06), merchantWinMat);
+      rightWindow.position.set(0.42, 0.98, 0.71);
+      merchantGroup.add(rightWindow);
+
+      const signBoard = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.28, 0.1), merchantWinMat);
+      signBoard.position.set(0, 2.12, 0.45);
+      merchantGroup.add(signBoard);
+
+      merchantGlowLight = new THREE.PointLight(0xffdf80, 0, 4.2);
+      merchantGlowLight.position.set(0, 1.25, 1.2);
+      merchantGroup.add(merchantGlowLight);
+    }
+
+    function setMerchantLit(lit) {
+      if (lit) {
+        merchantBodyMat.color.setHex(0xe8d9be);
+        merchantAwningMat.color.setHex(0x3a322b);
+        merchantWinMat.color.setHex(0xfff1a8);
+        merchantWinMat.emissive.setHex(0xffc940);
+        merchantWinMat.emissiveIntensity = 0.85;
+        merchantGlowLight.intensity = 1.6;
+      } else {
+        merchantBodyMat.color.setHex(0x24211e);
+        merchantAwningMat.color.setHex(0x1b1917);
+        merchantWinMat.color.setHex(0x151311);
+        merchantWinMat.emissive.setHex(0x000000);
+        merchantWinMat.emissiveIntensity = 0.0;
+        merchantGlowLight.intensity = 0;
+      }
+    }
+
+    // 6. BASE SEPOLIA CHAIN STATION: Row of red linked blocks
+    const chainGroup = createPedestal(X_POS.chain);
+    const settledBlockMesh = new THREE.Group();
+    {
+      const redBlockMat = new THREE.MeshStandardMaterial({
+        color: COL_RED,
+        roughness: 0.45,
+        metalness: 0.15
+      });
+      const linkMat = new THREE.MeshStandardMaterial({ color: COL_INK, roughness: 0.5 });
+
+      const xs = [-0.78, -0.14, 0.5];
+      xs.forEach((bx, idx) => {
+        const blk = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), redBlockMat);
+        blk.position.set(bx, 0.65, 0);
+        blk.castShadow = true;
+        chainGroup.add(blk);
+
+        if (idx < xs.length - 1) {
+          const link = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.06, 0.06, 0.24, 10),
+            linkMat
+          );
+          link.rotation.z = Math.PI / 2;
+          link.position.set(bx + 0.32, 0.65, 0);
+          chainGroup.add(link);
+        }
+      });
+
+      // 4th block that appears when payment settles on chain
+      const newLink = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.24, 10),
+        linkMat
+      );
+      newLink.rotation.z = Math.PI / 2;
+      newLink.position.set(0.82, 0.65, 0);
+      settledBlockMesh.add(newLink);
+
+      const newBlk = new THREE.Mesh(
+        new THREE.BoxGeometry(0.52, 0.52, 0.52),
+        new THREE.MeshStandardMaterial({
+          color: COL_RED_LIGHT,
+          emissive: COL_RED,
+          emissiveIntensity: 0.45,
+          roughness: 0.35
+        })
+      );
+      newBlk.position.set(1.12, 0.65, 0);
+      settledBlockMesh.add(newBlk);
+
+      settledBlockMesh.visible = false;
+      chainGroup.add(settledBlockMesh);
+    }
+
+    // Dynamic Moving Meshes: Yellow Packet & Red Coin
+    function createYellowPacket() {
+      const grp = new THREE.Group();
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.66, 0.44, 0.16),
+        new THREE.MeshStandardMaterial({
+          color: COL_YELLOW,
+          emissive: COL_YELLOW,
+          emissiveIntensity: 0.3,
+          roughness: 0.35
+        })
+      );
+      grp.add(box);
+
+      const flap = new THREE.Mesh(
+        new THREE.BoxGeometry(0.68, 0.07, 0.18),
+        new THREE.MeshStandardMaterial({ color: COL_INK })
+      );
+      flap.position.y = 0.08;
+      grp.add(flap);
+
+      const blueSealBadge = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.16, 0.2, 20),
+        new THREE.MeshStandardMaterial({
+          color: COL_BLUE,
+          emissive: COL_BLUE_LIGHT,
+          emissiveIntensity: 0.5
+        })
+      );
+      blueSealBadge.rotation.x = Math.PI / 2;
+      blueSealBadge.visible = false;
+      grp.add(blueSealBadge);
+      grp.userData.seal = blueSealBadge;
+
+      grp.visible = false;
+      scene.add(grp);
+      return grp;
+    }
+
+    const packetMesh0 = createYellowPacket();
+    const packetMesh1 = createYellowPacket();
+
+    // Red Coin (Merchant -> Chain)
+    const redCoinMesh = new THREE.Group();
+    {
+      const coinDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 0.14, 28),
+        new THREE.MeshStandardMaterial({
+          color: COL_RED,
+          emissive: COL_RED_LIGHT,
+          emissiveIntensity: 0.35,
+          roughness: 0.3,
+          metalness: 0.25
+        })
+      );
+      coinDisc.rotation.x = Math.PI / 2;
+      redCoinMesh.add(coinDisc);
+
+      const coinRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.4, 0.04, 12, 28),
+        new THREE.MeshStandardMaterial({ color: 0xffb4ab, roughness: 0.3 })
+      );
+      redCoinMesh.add(coinRim);
+
+      redCoinMesh.visible = false;
+      scene.add(redCoinMesh);
+    }
+
+    // HTML Overlay References
+    const domLabels = {
+      buyer: document.getElementById("lbl-buyer"),
+      agent: document.getElementById("lbl-agent"),
+      spend: document.getElementById("lbl-spend"),
+      vault: document.getElementById("lbl-vault"),
+      merchant: document.getElementById("lbl-merchant"),
+      chain: document.getElementById("lbl-chain"),
+      refusal: document.getElementById("lbl-refusal"),
+      settled: document.getElementById("lbl-settled"),
+      captionBar: document.getElementById("caption-bar"),
+      captionText: document.getElementById("caption-text")
+    };
+
+    function projectToScreen(worldPos, el) {
+      const vec = worldPos.clone().project(camera);
+      const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-vec.y * 0.5 + 0.5) * window.innerHeight;
+      el.style.left = `${x.toFixed(1)}px`;
+      el.style.top = `${y.toFixed(1)}px`;
+    }
+
+    function updateOverlayPositions() {
+      projectToScreen(new THREE.Vector3(X_POS.buyer, -0.58, 1.3), domLabels.buyer);
+      projectToScreen(new THREE.Vector3(X_POS.agent, -0.58, 1.3), domLabels.agent);
+      projectToScreen(new THREE.Vector3(X_POS.spend, -0.58, 1.3), domLabels.spend);
+      projectToScreen(new THREE.Vector3(X_POS.vault, -0.58, 1.3), domLabels.vault);
+      projectToScreen(new THREE.Vector3(X_POS.merchant, -0.58, 1.3), domLabels.merchant);
+      projectToScreen(new THREE.Vector3(X_POS.chain, -0.58, 1.3), domLabels.chain);
+
+      projectToScreen(new THREE.Vector3(X_POS.vault - 0.25, 3.05, 0), domLabels.refusal);
+      projectToScreen(new THREE.Vector3(X_POS.chain + 0.25, 2.35, 0), domLabels.settled);
+    }
+
+    // Replay State Flags (driven by events array in file order)
+    const ev0 = rawEvents[0]; // refused
+    const ev1 = rawEvents[1]; // settled
+
+    const state = {
+      ev0Started: false,
+      ev0Refused: false,
+      ev1Started: false,
+      ev1Sealed: false,
+      ev1CoinStarted: false,
+      ev1Settled: false
+    };
+
+    function setCaption(sentence, orderId, nowMs) {
+      domLabels.captionBar.style.opacity = "1";
+      domLabels.captionText.innerHTML = `${sentence} <span class="caption-oid">${orderId}</span>`;
+      internal.addLabel(`${sentence} ${orderId}`, nowMs, orderId);
+    }
+
+    function lerpPos(x0, x1, u, arcHeight) {
+      const clamped = Math.max(0, Math.min(1, u));
+      const x = x0 + (x1 - x0) * clamped;
+      const y = 1.35 + Math.sin(clamped * Math.PI) * arcHeight;
+      return new THREE.Vector3(x, y, 0.85);
+    }
+
+    // Timeline Schedule (35s declared duration, 32.5s completion after 4.5s final hold)
+    // Beat 1 (ev0: refused): 1500ms -> 14000ms (12.5s beat)
+    // Beat 2 (ev1: settled): 14000ms -> 28000ms (14.0s beat)
+    // Final hold: 28000ms -> 32500ms (4.5s hold), then done = true
+    function updateTimeline(nowMs) {
+      // Gentle camera drift that keeps all 6 stations well inside frame
+      const driftAngle = nowMs * 0.00025;
+      camera.position.x = Math.sin(driftAngle) * 0.22;
+      camera.position.y = 6.0 + Math.cos(driftAngle * 0.8) * 0.08;
+      camera.lookAt(0, 0.7, 0);
+
+      // --- BEAT 1: Event 0 (refused) ---
+      if (nowMs >= 1500 && !state.ev0Started) {
+        state.ev0Started = true;
+        theater.marks.push({
+          t: Math.round(nowMs),
+          kind: ev0.kind,
+          orderId: ev0.orderId,
+          element: "refusal"
+        });
+        internal.addElement(`packet:${ev0.orderId}`, nowMs, ev0.orderId);
+        packetMesh0.visible = true;
+      }
+
+      if (nowMs >= 1500 && nowMs < 4800) {
+        if (nowMs < 3100) {
+          // agent -> spend
+          const u = (nowMs - 1500) / 1600;
+          packetMesh0.position.copy(lerpPos(X_POS.agent, X_POS.spend, u, 0.55));
+          spendGateBar.rotation.z = Math.sin(u * Math.PI) * 0.35;
+        } else {
+          // spend -> vault
+          const u = (nowMs - 3100) / 1700;
+          packetMesh0.position.copy(lerpPos(X_POS.spend, X_POS.vault - 0.55, u, 0.45));
+          spendGateBar.rotation.z = 0;
+        }
+      }
+
+      if (nowMs >= 4800 && !state.ev0Refused) {
+        state.ev0Refused = true;
+        packetMesh0.visible = false;
+        internal.closeElement(`packet:${ev0.orderId}`, nowMs);
+
+        // Vault shows refusal mark (blue seal with cross) and code text
+        refusalSealGroup.visible = true;
+        internal.addElement(`refusal:${ev0.orderId}`, nowMs, ev0.orderId);
+
+        const refusalLabelPlain = `refused ${ev0.code} ${ev0.orderId}`;
+        domLabels.refusal.innerHTML = `<span class="badge-icon">✕</span><span>refused ${ev0.code}</span> <span class="oid-token">${ev0.orderId}</span>`;
+        domLabels.refusal.style.display = "inline-flex";
+        internal.addLabel(refusalLabelPlain, nowMs, ev0.orderId);
+
+        setCaption(`Vault refused the payment: ${ev0.code}`, ev0.orderId, nowMs);
+      }
+
+      // --- BEAT 2: Event 1 (settled) ---
+      if (nowMs >= 14000 && !state.ev1Started) {
+        state.ev1Started = true;
+        theater.marks.push({
+          t: Math.round(nowMs),
+          kind: ev1.kind,
+          orderId: ev1.orderId,
+          element: "coin"
+        });
+        internal.addElement(`packet:${ev1.orderId}`, nowMs, ev1.orderId);
+        packetMesh1.visible = true;
+      }
+
+      if (nowMs >= 14000 && nowMs < 19200) {
+        if (nowMs < 15800) {
+          // agent -> spend
+          const u = (nowMs - 14000) / 1800;
+          packetMesh1.position.copy(lerpPos(X_POS.agent, X_POS.spend, u, 0.55));
+          spendGateBar.rotation.z = Math.sin(u * Math.PI) * 0.48;
+        } else if (nowMs < 17600) {
+          // spend -> vault
+          const u = (nowMs - 15800) / 1800;
+          packetMesh1.position.copy(lerpPos(X_POS.spend, X_POS.vault, u, 0.45));
+          spendGateBar.rotation.z = 0;
+        } else {
+          // At vault: vault seals packet in blue (key inside vault glows in place without moving)
+          packetMesh1.position.set(X_POS.vault, 1.35, 0.9);
+          if (!state.ev1Sealed) {
+            state.ev1Sealed = true;
+            packetMesh1.userData.seal.visible = true;
+            vaultBlueSealGroup.visible = true;
+            vaultInteriorLight.intensity = 2.0;
+          }
+        }
+      }
+
+      // Only AFTER vault seals packet, red coin moves merchant -> chain and merchant lights up
+      if (nowMs >= 19200 && !state.ev1CoinStarted) {
+        state.ev1CoinStarted = true;
+        packetMesh1.visible = false;
+        internal.closeElement(`packet:${ev1.orderId}`, nowMs);
+        vaultInteriorLight.intensity = 1.0;
+
+        setMerchantLit(true);
+        redCoinMesh.visible = true;
+        internal.addElement(`coin:${ev1.orderId}`, nowMs, ev1.orderId);
+      }
+
+      if (nowMs >= 19200 && nowMs < 22500) {
+        const u = (nowMs - 19200) / 3300;
+        redCoinMesh.position.copy(lerpPos(X_POS.merchant, X_POS.chain + 1.12, u, 0.85));
+        redCoinMesh.rotation.y = u * Math.PI * 2;
+      }
+
+      if (nowMs >= 22500 && !state.ev1Settled) {
+        state.ev1Settled = true;
+        redCoinMesh.position.set(X_POS.chain + 1.12, 1.25, 0);
+        redCoinMesh.rotation.y = 0;
+
+        settledBlockMesh.visible = true;
+        internal.addElement(`settled:${ev1.orderId}`, nowMs, ev1.orderId);
+
+        const shortHash = ev1.txHash.slice(0, 10);
+        const settledLabelPlain = `${ev1.amount} USDC ${shortHash} ${ev1.orderId}`;
+        domLabels.settled.innerHTML = `<span class="badge-icon">●</span><span>${ev1.amount} USDC · ${shortHash}</span> <span class="oid-token">${ev1.orderId}</span>`;
+        domLabels.settled.style.display = "inline-flex";
+        internal.addLabel(settledLabelPlain, nowMs, ev1.orderId);
+
+        setCaption(
+          `Settled on Base Sepolia: ${ev1.amount} USDC, receipt ${shortHash}`,
+          ev1.orderId,
+          nowMs
+        );
+      }
+
+      // Final state holds from 22.5s to 32.5s (well over 3-5s hold), then done = true
+      if (nowMs >= 32500 && !theater.done) {
+        theater.done = true;
+      }
+    }
+
+    function tick() {
+      const nowMs = performance.now() - startTime;
+      updateTimeline(nowMs);
+      updateOverlayPositions();
+      renderer.render(scene, camera);
+    }
+
+    function animate() {
+      tick();
+      requestAnimationFrame(animate);
+    }
+
+    // Fallback interval ensures timeline advances accurately even if rAF is throttled
+    const timerId = setInterval(function () {
+      tick();
+      if (theater.done) {
+        clearInterval(timerId);
+      }
+    }, 50);
+
+    window.addEventListener("resize", function () {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      updateOverlayPositions();
+    });
+
+    updateOverlayPositions();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spend Theater — Payment Log Replay</title>
+  <script type="application/json" id="events">
+[{"t":0,"actor":"vault","kind":"refused","orderId":"ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa","code":"rule_payto"},{"t":1000,"actor":"chain","kind":"settled","orderId":"ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d","amount":"1.5","txHash":"0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a"}]
+  </script>
+  <script>
+    (function () {
+      const DURATION_SEC = 35;
+      const DURATION_MS = DURATION_SEC * 1000;
+      const startTime = performance.now();
+
+      const marks = [];
+      const labelsHistory = [];
+      const elementsHistory = [
+        { name: 'buyer', visibleFrom: 0, visibleTo: null },
+        { name: 'agent', visibleFrom: 0, visibleTo: null },
+        { name: 'spend', visibleFrom: 0, visibleTo: null },
+        { name: 'vault', visibleFrom: 0, visibleTo: null },
+        { name: 'merchant', visibleFrom: 0, visibleTo: null },
+        { name: 'chain', visibleFrom: 0, visibleTo: null }
+      ];
+
+      function nowMs() {
+        return Math.max(0, Math.round(performance.now() - startTime));
+      }
+
+      function addLabel(text, t, orderId) {
+        if (!text) return;
+        const last = labelsHistory[labelsHistory.length - 1];
+        if (last && last.text === text && last.orderId === orderId) return;
+        const entry = { text: String(text), t: typeof t === 'number' ? Math.round(t) : nowMs() };
+        if (orderId) entry.orderId = String(orderId);
+        labelsHistory.push(entry);
+      }
+
+      function addElement(name, t, orderId) {
+        const existing = elementsHistory.find(e => e.name === name && e.visibleTo === null);
+        if (existing) return existing;
+        const entry = {
+          name: String(name),
+          visibleFrom: typeof t === 'number' ? Math.round(t) : nowMs(),
+          visibleTo: null
+        };
+        if (orderId) entry.orderId = String(orderId);
+        elementsHistory.push(entry);
+        return entry;
+      }
+
+      function removeElement(name, t) {
+        const entry = elementsHistory.find(e => e.name === name && e.visibleTo === null);
+        if (entry) {
+          entry.visibleTo = typeof t === 'number' ? Math.round(t) : nowMs();
+        }
+      }
+
+      function addMark(kind, orderId, element, t) {
+        if (marks.some(m => m.orderId === orderId && m.kind === kind)) return;
+        marks.push({
+          t: typeof t === 'number' ? Math.round(t) : nowMs(),
+          kind: String(kind),
+          orderId: String(orderId),
+          element: String(element)
+        });
+      }
+
+      addLabel('Buyer', 0);
+      addLabel('Gemini Agent', 0);
+      addLabel('Spend Policy', 0);
+      addLabel('Basis Theory Vault', 0);
+      addLabel('Merchant', 0);
+      addLabel('Base Sepolia', 0);
+
+      window.__theater = {
+        duration: DURATION_SEC,
+        marks: marks,
+        done: false,
+        snapshot: function () {
+          return {
+            labels: labelsHistory.map(function (l) {
+              const out = { text: l.text, t: l.t };
+              if (l.orderId) out.orderId = l.orderId;
+              return out;
+            }),
+            elements: elementsHistory.map(function (e) {
+              const out = {
+                name: e.name,
+                visibleFrom: e.visibleFrom,
+                visibleTo: e.visibleTo !== null ? e.visibleTo : DURATION_MS
+              };
+              if (e.orderId) out.orderId = e.orderId;
+              return out;
+            })
+          };
+        }
+      };
+
+      window.__theaterInternal = {
+        startTime: startTime,
+        DURATION_SEC: DURATION_SEC,
+        DURATION_MS: DURATION_MS,
+        nowMs: nowMs,
+        addLabel: addLabel,
+        addElement: addElement,
+        removeElement: removeElement,
+        addMark: addMark
+      };
+    })();
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f3ead7;
+      color: #1c1917;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #stage-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 38%, #f8f1e2 0%, #f3ead7 65%, #e7dbc3 100%);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #overlay-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    #header-bar {
+      position: absolute;
+      top: 16px;
+      left: 28px;
+      right: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid rgba(44, 38, 32, 0.18);
+      padding-bottom: 10px;
+    }
+    .theater-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #29231e;
+    }
+    .legend {
+      display: flex;
+      gap: 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #3a322b;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1.5px solid #1c1917;
+    }
+    .swatch-yellow { background: #eab308; }
+    .swatch-blue { background: #1d4ed8; }
+    .swatch-red { background: #dc2626; }
+
+    .station-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: rgba(248, 242, 229, 0.94);
+      border: 1.5px solid #2c2620;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1c1917;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(28, 25, 23, 0.12);
+      text-align: center;
+    }
+    .station-label .sub {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #574c41;
+      margin-top: 1px;
+    }
+    .station-label.vault-station {
+      border-color: #1d4ed8;
+      color: #1e3a8a;
+    }
+    .station-label.chain-station {
+      border-color: #b91c1c;
+      color: #7f1d1d;
+    }
+
+    .floating-badge {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(28, 25, 23, 0.18);
+      transition: opacity 0.2s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .floating-badge.visible {
+      opacity: 1;
+    }
+    .floating-badge.badge-refusal {
+      background: #eff6ff;
+      border: 2.5px solid #1d4ed8;
+      color: #1e3a8a;
+    }
+    .floating-badge.badge-settled {
+      background: #fef2f2;
+      border: 2.5px solid #dc2626;
+      color: #991b1b;
+    }
+    .floating-badge.badge-packet {
+      background: #fef9c3;
+      border: 2px solid #ca8a04;
+      color: #422006;
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+    .floating-badge.badge-coin {
+      background: #fee2e2;
+      border: 2px solid #dc2626;
+      color: #7f1d1d;
+      font-size: 15px;
+      padding: 5px 10px;
+    }
+    .floating-badge .badge-order {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.82;
+      margin-left: 6px;
+    }
+
+    #caption-bar {
+      position: absolute;
+      left: 28px;
+      right: 28px;
+      bottom: 18px;
+      min-height: 88px;
+      background: #f9f3e6;
+      border: 2.5px solid #1c1917;
+      border-radius: 10px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      box-shadow: 0 6px 20px rgba(28, 25, 23, 0.14);
+    }
+    #caption-text {
+      font-size: 30px;
+      line-height: 1.25;
+      font-weight: 700;
+      color: #161311;
+      letter-spacing: -0.01em;
+    }
+    #caption-text .caption-order-id {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: #4a4036;
+      background: #e8dec8;
+      padding: 3px 8px;
+      border-radius: 5px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    #caption-status-pill {
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 2px solid #1c1917;
+      background: #eae0cc;
+      color: #1c1917;
+    }
+    #caption-status-pill.status-refused {
+      background: #dbeafe;
+      border-color: #1d4ed8;
+      color: #1e3a8a;
+    }
+    #caption-status-pill.status-settled {
+      background: #fee2e2;
+      border-color: #dc2626;
+      color: #991b1b;
+    }
+    #caption-status-pill.status-packet {
+      background: #fef08a;
+      border-color: #ca8a04;
+      color: #713f12;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage-container">
+    <div id="overlay-layer">
+      <div id="header-bar">
+        <div class="theater-title">Spend Theater · Drug-Discovery Research Payment Log</div>
+        <div class="legend">
+          <div class="legend-item"><span class="swatch swatch-yellow"></span>Request / Packet</div>
+          <div class="legend-item"><span class="swatch swatch-blue"></span>Basis Theory Vault &amp; Seal</div>
+          <div class="legend-item"><span class="swatch swatch-red"></span>USDC Payment &amp; Base Sepolia Ledger</div>
+        </div>
+      </div>
+
+      <div id="label-buyer" class="station-label">Buyer<span class="sub">Drug-Discovery Co.</span></div>
+      <div id="label-agent" class="station-label">Gemini Agent<span class="sub">Research Buyer</span></div>
+      <div id="label-spend" class="station-label">Spend Policy<span class="sub">Policy Gate</span></div>
+      <div id="label-vault" class="station-label vault-station">Basis Theory Vault<span class="sub">Wallet Key Inside</span></div>
+      <div id="label-merchant" class="station-label">Merchant<span class="sub">Research Storefront</span></div>
+      <div id="label-chain" class="station-label chain-station">Base Sepolia<span class="sub">On-Chain Ledger</span></div>
+
+      <div id="badge-packet" class="floating-badge badge-packet"></div>
+      <div id="badge-refusal" class="floating-badge badge-refusal"></div>
+      <div id="badge-coin" class="floating-badge badge-coin"></div>
+      <div id="badge-settled" class="floating-badge badge-settled"></div>
+
+      <div id="caption-bar">
+        <div id="caption-text">Gemini agent requests research payments judged by spend policy and Basis Theory vault.</div>
+        <div id="caption-status-pill">Stage Ready</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+    const internal = window.__theaterInternal;
+    const rawEvents = JSON.parse(document.getElementById('events').textContent);
+
+    const refusedEvent = rawEvents.find(e => e.kind === 'refused') || rawEvents[0];
+    const settledEvent = rawEvents.find(e => e.kind === 'settled') || rawEvents[1];
+
+    const ORD_REFUSED = refusedEvent.orderId;
+    const CODE_REFUSED = refusedEvent.code;
+    const ORD_SETTLED = settledEvent.orderId;
+    const AMT_SETTLED = `${settledEvent.amount} USDC`;
+    const HASH_SETTLED = settledEvent.txHash.slice(0, 10);
+
+    // Timeline schedule in milliseconds (Total duration: 35,000ms)
+    const T_BEAT1_START = 2000;     // Packet 1 starts: agent -> spend -> vault
+    const T_BEAT1_SPEND = 4200;     // Packet 1 reaches spend policy
+    const T_BEAT1_REFUSED = 6500;   // Packet 1 reaches vault -> Vault refuses payment
+    const T_BEAT1_CLEAR = 14400;    // Clear temporary packet/refusal before Beat 2
+
+    const T_BEAT2_START = 15000;    // Packet 2 starts: agent -> spend -> vault
+    const T_BEAT2_SPEND = 16900;    // Packet 2 reaches spend policy
+    const T_BEAT2_VAULT = 18600;    // Packet 2 reaches vault -> Vault seals in blue
+    const T_BEAT2_COIN = 20200;     // Red coin starts: buyer -> merchant
+    const T_BEAT2_MERCHANT = 24600; // Red coin lands at merchant -> Merchant lights up
+    const T_BEAT2_LEDGER = 25200;   // Appended red block on Base Sepolia chain + receipt
+    const T_DONE = 34000;           // After >4.5s final hold, mark done = true
+
+    const container = document.getElementById('stage-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf3ead7);
+
+    const camera = new THREE.PerspectiveCamera(37, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 6.3, 19.2);
+    camera.lookAt(0, 0.45, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.insertBefore(renderer.domElement, container.firstChild);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.35);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffdf7, 1.45);
+    dirLight.position.set(7, 15, 11);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -13;
+    dirLight.shadow.camera.right = 13;
+    dirLight.shadow.camera.top = 8;
+    dirLight.shadow.camera.bottom = -8;
+    scene.add(dirLight);
+
+    const fillLight = new THREE.DirectionalLight(0xe5d6b8, 0.55);
+    fillLight.position.set(-9, 6, -6);
+    scene.add(fillLight);
+
+    // Palette materials
+    const matPaperLight = new THREE.MeshStandardMaterial({ color: 0xeee3cc, roughness: 0.85 });
+    const matPaperMid = new THREE.MeshStandardMaterial({ color: 0xdfd0b2, roughness: 0.82 });
+    const matPaperDark = new THREE.MeshStandardMaterial({ color: 0xc2b08e, roughness: 0.85 });
+    const matInk = new THREE.MeshStandardMaterial({ color: 0x26221e, roughness: 0.65 });
+    const matYellow = new THREE.MeshStandardMaterial({ color: 0xeab308, emissive: 0x854d0e, emissiveIntensity: 0.25, roughness: 0.35 });
+    const matBlueVault = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.35, metalness: 0.15 });
+    const matBlueTrim = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4, metalness: 0.2 });
+    const matBlueSeal = new THREE.MeshStandardMaterial({ color: 0x2563eb, emissive: 0x1d4ed8, emissiveIntensity: 0.45, roughness: 0.25 });
+    const matRedChain = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35, metalness: 0.1 });
+    const matRedDark = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.45 });
+
+    // Ground platform & stage rail
+    const stageBase = new THREE.Mesh(
+      new THREE.BoxGeometry(21.4, 0.36, 5.8),
+      new THREE.MeshStandardMaterial({ color: 0xe6d8bc, roughness: 0.9 })
+    );
+    stageBase.position.set(0, -0.18, 0);
+    stageBase.receiveShadow = true;
+    scene.add(stageBase);
+
+    const stageBorder = new THREE.Mesh(
+      new THREE.BoxGeometry(21.6, 0.1, 6.0),
+      matInk
+    );
+    stageBorder.position.set(0, -0.32, 0);
+    scene.add(stageBorder);
+
+    // Station X positions (left to right)
+    const X_POS = {
+      buyer: -8.5,
+      agent: -5.1,
+      spend: -1.7,
+      vault: 1.7,
+      merchant: 5.1,
+      chain: 8.5
+    };
+
+    // Subtle track line connecting stations
+    const trackMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(17.2, 0.03, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xb8a686, roughness: 0.9 })
+    );
+    trackMesh.position.set(0, 0.015, 0);
+    scene.add(trackMesh);
+
+    function createPedestal(x, colorHex = 0xd8c7a6) {
+      const group = new THREE.Group();
+      group.position.set(x, 0, 0);
+      const pad = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.18, 1.25, 0.16, 32),
+        new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.8 })
+      );
+      pad.position.y = 0.08;
+      pad.receiveShadow = true;
+      pad.castShadow = true;
+      group.add(pad);
+
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(1.2, 0.03, 12, 48),
+        matInk
+      );
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.16;
+      group.add(rim);
+
+      scene.add(group);
+      return group;
+    }
+
+    // 1. BUYER COMPANY (x = -8.5): small building, paper tones
+    const buyerGroup = createPedestal(X_POS.buyer);
+    {
+      const mainBldg = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.45, 1.15), matPaperLight);
+      mainBldg.position.set(0, 0.88, 0);
+      mainBldg.castShadow = true;
+      mainBldg.receiveShadow = true;
+      buyerGroup.add(mainBldg);
+
+      const sideWing = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.95, 0.95), matPaperMid);
+      sideWing.position.set(-0.85, 0.63, -0.05);
+      sideWing.castShadow = true;
+      buyerGroup.add(sideWing);
+
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.18, 0.65, 4), matPaperDark);
+      roof.position.set(0, 1.93, 0);
+      roof.rotation.y = Math.PI / 4;
+      roof.castShadow = true;
+      buyerGroup.add(roof);
+
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.52, 0.06), matInk);
+      door.position.set(0, 0.42, 0.58);
+      buyerGroup.add(door);
+
+      // Windows in ink tones
+      for (const wx of [-0.38, 0.38]) {
+        for (const wy of [0.85, 1.28]) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.06), matInk);
+          win.position.set(wx, wy, 0.58);
+          buyerGroup.add(win);
+        }
+      }
+    }
+
+    // 2. GEMINI AGENT (x = -5.1): terminal/figure, paper tones with yellow message accents
+    const agentGroup = createPedestal(X_POS.agent);
+    {
+      const desk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.85), matPaperMid);
+      desk.position.set(0, 0.51, 0);
+      desk.castShadow = true;
+      agentGroup.add(desk);
+
+      const monitorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.82, 0.22), matPaperLight);
+      monitorFrame.position.set(0, 1.38, 0);
+      monitorFrame.castShadow = true;
+      agentGroup.add(monitorFrame);
+
+      const screen = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.62, 0.06), matInk);
+      screen.position.set(0, 1.38, 0.11);
+      agentGroup.add(screen);
+
+      // Yellow message accent bars on agent terminal screen
+      for (let i = 0; i < 3; i++) {
+        const bar = new THREE.Mesh(
+          new THREE.BoxGeometry(0.58 - i * 0.1, 0.075, 0.04),
+          matYellow
+        );
+        bar.position.set(-0.06 * i, 1.52 - i * 0.14, 0.14);
+        agentGroup.add(bar);
+      }
+
+      // Antenna with yellow beacon
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.38, 12), matInk);
+      stem.position.set(0, 1.98, 0);
+      agentGroup.add(stem);
+
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 20), matYellow);
+      beacon.position.set(0, 2.2, 0);
+      agentGroup.add(beacon);
+
+      const accentRing = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.035, 12, 36), matYellow);
+      accentRing.rotation.x = Math.PI / 2;
+      accentRing.position.set(0, 0.88, 0);
+      agentGroup.add(accentRing);
+    }
+
+    // 3. SPEND POLICY (x = -1.7): gate or checkpoint
+    const spendGroup = createPedestal(X_POS.spend);
+    let spendGateArm;
+    {
+      const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.85, 0.36), matPaperMid);
+      leftPillar.position.set(-0.62, 1.08, 0);
+      leftPillar.castShadow = true;
+      spendGroup.add(leftPillar);
+
+      const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.85, 0.36), matPaperMid);
+      rightPillar.position.set(0.62, 1.08, 0);
+      rightPillar.castShadow = true;
+      spendGroup.add(rightPillar);
+
+      const headerArch = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.34, 0.44), matInk);
+      headerArch.position.set(0, 2.08, 0);
+      headerArch.castShadow = true;
+      spendGroup.add(headerArch);
+
+      // Checkpoint barrier arm
+      spendGateArm = new THREE.Group();
+      spendGateArm.position.set(-0.48, 1.15, 0.18);
+      const armBar = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.12, 0.08), matPaperLight);
+      armBar.position.set(0.46, 0, 0);
+      spendGateArm.add(armBar);
+
+      const stripe1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.125, 0.085), matInk);
+      stripe1.position.set(0.25, 0, 0);
+      spendGateArm.add(stripe1);
+
+      const stripe2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.125, 0.085), matInk);
+      stripe2.position.set(0.68, 0, 0);
+      spendGateArm.add(stripe2);
+
+      spendGroup.add(spendGateArm);
+    }
+
+    // 4. BASIS THEORY VAULT (x = +1.7): blue vault box; the key is drawn inside it and never leaves it
+    const vaultGroup = createPedestal(X_POS.vault, 0xc7d7f4);
+    let vaultKeyMat;
+    let vaultSealRing;
+    {
+      // Back wall of blue vault box
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.62, 1.62, 0.16), matBlueVault);
+      backWall.position.set(0, 0.98, -0.52);
+      backWall.castShadow = true;
+      vaultGroup.add(backWall);
+
+      // Bottom floor of vault
+      const floorWall = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.16, 1.2), matBlueVault);
+      floorWall.position.set(0, 0.24, 0);
+      vaultGroup.add(floorWall);
+
+      // Top roof of vault
+      const roofWall = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.18, 1.2), matBlueVault);
+      roofWall.position.set(0, 1.72, 0);
+      roofWall.castShadow = true;
+      vaultGroup.add(roofWall);
+
+      // Left wall of vault
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.62, 1.2), matBlueVault);
+      leftWall.position.set(-0.72, 0.98, 0);
+      leftWall.castShadow = true;
+      vaultGroup.add(leftWall);
+
+      // Right wall of vault
+      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.62, 1.2), matBlueVault);
+      rightWall.position.set(0.72, 0.98, 0);
+      rightWall.castShadow = true;
+      vaultGroup.add(rightWall);
+
+      // Blue frame bezel on front so inside is clearly visible
+      const frontGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(1.28, 1.32, 0.04),
+        new THREE.MeshStandardMaterial({
+          color: 0x93c5fd,
+          transparent: true,
+          opacity: 0.22,
+          roughness: 0.1
+        })
+      );
+      frontGlass.position.set(0, 0.98, 0.56);
+      vaultGroup.add(frontGlass);
+
+      // THE KEY INSIDE THE VAULT (Static — never moves, never leaves the vault)
+      const keyGroup = new THREE.Group();
+      keyGroup.position.set(0, 0.98, 0.05);
+
+      vaultKeyMat = new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        emissive: 0x60a5fa,
+        emissiveIntensity: 0.35,
+        roughness: 0.25,
+        metalness: 0.3
+      });
+
+      // Key bow (ring)
+      const keyBow = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.06, 16, 32), vaultKeyMat);
+      keyBow.position.set(-0.28, 0, 0);
+      keyGroup.add(keyBow);
+
+      // Key shaft
+      const keyShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.62, 16), vaultKeyMat);
+      keyShaft.rotation.z = Math.PI / 2;
+      keyShaft.position.set(0.18, 0, 0);
+      keyGroup.add(keyShaft);
+
+      // Key teeth
+      const tooth1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.06), vaultKeyMat);
+      tooth1.position.set(0.28, -0.11, 0);
+      keyGroup.add(tooth1);
+
+      const tooth2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.13, 0.06), vaultKeyMat);
+      tooth2.position.set(0.41, -0.085, 0);
+      keyGroup.add(tooth2);
+
+      vaultGroup.add(keyGroup);
+
+      // Blue seal aura ring around vault roof
+      vaultSealRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.95, 0.055, 16, 48),
+        matBlueSeal
+      );
+      vaultSealRing.rotation.x = Math.PI / 2;
+      vaultSealRing.position.set(0, 1.88, 0);
+      vaultSealRing.visible = false;
+      vaultGroup.add(vaultSealRing);
+    }
+
+    // 5. MERCHANT (x = +5.1): storefront; dark until it is paid
+    const merchantGroup = createPedestal(X_POS.merchant);
+    let merchantBodyMat;
+    let merchantWindowMat;
+    let merchantSignMat;
+    let merchantGlowLight;
+    {
+      merchantBodyMat = new THREE.MeshStandardMaterial({ color: 0x231f1d, roughness: 0.85 });
+      merchantWindowMat = new THREE.MeshStandardMaterial({
+        color: 0x181513,
+        emissive: 0x000000,
+        emissiveIntensity: 0,
+        roughness: 0.4
+      });
+      merchantSignMat = new THREE.MeshStandardMaterial({
+        color: 0x332d29,
+        emissive: 0x000000,
+        emissiveIntensity: 0,
+        roughness: 0.5
+      });
+
+      const storeBody = new THREE.Mesh(new THREE.BoxGeometry(1.58, 1.38, 1.15), merchantBodyMat);
+      storeBody.position.set(0, 0.85, 0);
+      storeBody.castShadow = true;
+      storeBody.receiveShadow = true;
+      merchantGroup.add(storeBody);
+
+      // Awning
+      const awning = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.22, 0.42), merchantSignMat);
+      awning.position.set(0, 1.36, 0.62);
+      awning.rotation.x = 0.25;
+      merchantGroup.add(awning);
+
+      // Storefront windows (dark until paid)
+      const leftWin = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.58, 0.06), merchantWindowMat);
+      leftWin.position.set(-0.36, 0.78, 0.57);
+      merchantGroup.add(leftWin);
+
+      const rightWin = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.58, 0.06), merchantWindowMat);
+      rightWin.position.set(0.36, 0.78, 0.57);
+      merchantGroup.add(rightWin);
+
+      // Roof signboard
+      const signBoard = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.3, 0.14), merchantSignMat);
+      signBoard.position.set(0, 1.69, 0.25);
+      merchantGroup.add(signBoard);
+
+      merchantGlowLight = new THREE.PointLight(0xfef08a, 0, 5);
+      merchantGlowLight.position.set(0, 1.2, 1.1);
+      merchantGroup.add(merchantGlowLight);
+    }
+
+    function setMerchantLit(isLit) {
+      if (isLit) {
+        merchantBodyMat.color.setHex(0xede0c8);
+        merchantWindowMat.color.setHex(0xfef08a);
+        merchantWindowMat.emissive.setHex(0xfacc15);
+        merchantWindowMat.emissiveIntensity = 0.85;
+        merchantSignMat.color.setHex(0xd97706);
+        merchantSignMat.emissive.setHex(0xf59e0b);
+        merchantSignMat.emissiveIntensity = 0.45;
+        merchantGlowLight.intensity = 2.2;
+      } else {
+        merchantBodyMat.color.setHex(0x231f1d);
+        merchantWindowMat.color.setHex(0x181513);
+        merchantWindowMat.emissive.setHex(0x000000);
+        merchantWindowMat.emissiveIntensity = 0;
+        merchantSignMat.color.setHex(0x332d29);
+        merchantSignMat.emissive.setHex(0x000000);
+        merchantSignMat.emissiveIntensity = 0;
+        merchantGlowLight.intensity = 0;
+      }
+    }
+
+    // 6. BASE SEPOLIA CHAIN (x = +8.5): row of red linked blocks
+    const chainGroup = createPedestal(X_POS.chain, 0xf2d3cf);
+    let appendedLedgerBlockGroup = null;
+    let ledgerPulseRing = null;
+    {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.1, 0.55), matInk);
+      rail.position.set(0, 0.21, 0);
+      chainGroup.add(rail);
+
+      // 3 initial static red linked blocks at [-0.72, -0.24, +0.24], leaving +0.72 for appended block
+      const blockXPositions = [-0.72, -0.24, 0.24];
+      for (let i = 0; i < blockXPositions.length; i++) {
+        const bx = blockXPositions[i];
+        const blk = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.34, 0.34), matRedChain);
+        blk.position.set(bx, 0.52, 0);
+        blk.castShadow = true;
+        chainGroup.add(blk);
+
+        const wireframe = new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(0.35, 0.35, 0.35)),
+          new THREE.LineBasicMaterial({ color: 0x450a0a })
+        );
+        wireframe.position.copy(blk.position);
+        chainGroup.add(wireframe);
+
+        if (i > 0) {
+          const link = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.2, 12), matRedDark);
+          link.rotation.z = Math.PI / 2;
+          link.position.set(bx - 0.24, 0.52, 0);
+          chainGroup.add(link);
+        }
+      }
+
+      // Appended 4th red block (ledger:<orderId>), hidden until settled ledger cue
+      appendedLedgerBlockGroup = new THREE.Group();
+      appendedLedgerBlockGroup.position.set(0.72, 0.52, 0);
+      appendedLedgerBlockGroup.visible = false;
+
+      const newLink = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2, 12), matRedDark);
+      newLink.rotation.z = Math.PI / 2;
+      newLink.position.set(-0.24, 0, 0);
+      appendedLedgerBlockGroup.add(newLink);
+
+      const newBlkMat = new THREE.MeshStandardMaterial({
+        color: 0xef4444,
+        emissive: 0xdc2626,
+        emissiveIntensity: 0.55,
+        roughness: 0.25
+      });
+      const newBlk = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), newBlkMat);
+      newBlk.castShadow = true;
+      appendedLedgerBlockGroup.add(newBlk);
+
+      const newEdges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(0.39, 0.39, 0.39)),
+        new THREE.LineBasicMaterial({ color: 0x7f1d1d })
+      );
+      appendedLedgerBlockGroup.add(newEdges);
+
+      ledgerPulseRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.28, 0.38, 32),
+        new THREE.MeshBasicMaterial({
+          color: 0xdc2626,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.9
+        })
+      );
+      ledgerPulseRing.position.set(0, 0, 0.24);
+      appendedLedgerBlockGroup.add(ledgerPulseRing);
+
+      chainGroup.add(appendedLedgerBlockGroup);
+    }
+
+    // Dynamic 3D objects: Yellow Packet, Blue Refusal Seal with Cross, Red Coin
+    const packetGroup = new THREE.Group();
+    packetGroup.visible = false;
+    {
+      const envBody = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.38, 0.14), matYellow);
+      envBody.castShadow = true;
+      packetGroup.add(envBody);
+
+      const envFlap = new THREE.Mesh(
+        new THREE.ConeGeometry(0.34, 0.22, 4),
+        new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.4 })
+      );
+      envFlap.rotation.z = Math.PI;
+      envFlap.rotation.y = Math.PI / 4;
+      envFlap.position.set(0, 0.08, 0.05);
+      packetGroup.add(envFlap);
+
+      // Blue seal badge on packet when vault seals it
+      const packetBlueSeal = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.14, 0.18, 24),
+        matBlueSeal
+      );
+      packetBlueSeal.rotation.x = Math.PI / 2;
+      packetBlueSeal.position.set(0, 0, 0.04);
+      packetBlueSeal.name = 'packetBlueSeal';
+      packetBlueSeal.visible = false;
+      packetGroup.add(packetBlueSeal);
+    }
+    scene.add(packetGroup);
+
+    // Refusal mark at Vault: Blue seal with a cross
+    const refusalGroup = new THREE.Group();
+    refusalGroup.position.set(X_POS.vault, 2.25, 0.45);
+    refusalGroup.visible = false;
+    {
+      const sealDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.46, 0.46, 0.12, 32),
+        matBlueSeal
+      );
+      sealDisc.rotation.x = Math.PI / 2;
+      refusalGroup.add(sealDisc);
+
+      const sealRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.46, 0.045, 16, 36),
+        matBlueTrim
+      );
+      refusalGroup.add(sealRim);
+
+      const crossMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xeff6ff,
+        emissiveIntensity: 0.5,
+        roughness: 0.2
+      });
+      const bar1 = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.11, 0.16), crossMat);
+      bar1.rotation.z = Math.PI / 4;
+      bar1.position.z = 0.04;
+      refusalGroup.add(bar1);
+
+      const bar2 = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.11, 0.16), crossMat);
+      bar2.rotation.z = -Math.PI / 4;
+      bar2.position.z = 0.04;
+      refusalGroup.add(bar2);
+    }
+    scene.add(refusalGroup);
+
+    // Red Coin (Buyer -> Merchant payment)
+    const coinGroup = new THREE.Group();
+    coinGroup.visible = false;
+    {
+      const coinMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        emissive: 0x991b1b,
+        emissiveIntensity: 0.35,
+        roughness: 0.25,
+        metalness: 0.2
+      });
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.12, 32), coinMat);
+      disc.rotation.x = Math.PI / 2;
+      disc.castShadow = true;
+      coinGroup.add(disc);
+
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.38, 0.045, 16, 36),
+        new THREE.MeshStandardMaterial({ color: 0xfef2f2, roughness: 0.3 })
+      );
+      coinGroup.add(rim);
+    }
+    scene.add(coinGroup);
+
+    // DOM Overlay Elements
+    const stationLabelEls = {
+      buyer: document.getElementById('label-buyer'),
+      agent: document.getElementById('label-agent'),
+      spend: document.getElementById('label-spend'),
+      vault: document.getElementById('label-vault'),
+      merchant: document.getElementById('label-merchant'),
+      chain: document.getElementById('label-chain')
+    };
+
+    const badgePacket = document.getElementById('badge-packet');
+    const badgeRefusal = document.getElementById('badge-refusal');
+    const badgeCoin = document.getElementById('badge-coin');
+    const badgeSettled = document.getElementById('badge-settled');
+    const captionTextEl = document.getElementById('caption-text');
+    const captionStatusEl = document.getElementById('caption-status-pill');
+
+    function setCaption(sentence, orderId, statusText, statusClass, t) {
+      const fullPlainText = orderId ? `${sentence} ${orderId}` : sentence;
+      internal.addLabel(fullPlainText, t, orderId);
+
+      if (orderId) {
+        captionTextEl.innerHTML = `${sentence} <span class="caption-order-id">${orderId}</span>`;
+      } else {
+        captionTextEl.textContent = sentence;
+      }
+
+      captionStatusEl.textContent = statusText || 'Replay';
+      captionStatusEl.className = statusClass ? statusClass : '';
+    }
+
+    function showBadge(el, textMain, orderId, t) {
+      const fullPlain = orderId ? `${textMain} ${orderId}` : textMain;
+      internal.addLabel(fullPlain, t, orderId);
+      if (orderId) {
+        el.innerHTML = `${textMain} <span class="badge-order">${orderId}</span>`;
+      } else {
+        el.textContent = textMain;
+      }
+      el.classList.add('visible');
+    }
+
+    function hideBadge(el) {
+      el.classList.remove('visible');
+    }
+
+    function projectToScreen(pos3D, el) {
+      const v = pos3D.clone().project(camera);
+      const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    }
+
+    function lerp(a, b, u) {
+      const clamped = Math.max(0, Math.min(1, u));
+      return a + (b - a) * clamped;
+    }
+
+    function smoothstep(u) {
+      const c = Math.max(0, Math.min(1, u));
+      return c * c * (3 - 2 * c);
+    }
+
+    // Track state transitions so each milestone fires once
+    const flags = {
+      beat1Started: false,
+      beat1Refused: false,
+      beat1Cleared: false,
+      beat2Started: false,
+      beat2Sealed: false,
+      beat2CoinStarted: false,
+      beat2MerchantLit: false,
+      beat2LedgerAdded: false
+    };
+
+    function updateTimeline() {
+      const t = internal.nowMs();
+
+      // Subtle camera drift keeping all 6 stations well inside 1280x720 frame
+      const driftAngle = t * 0.00035;
+      camera.position.x = Math.sin(driftAngle) * 0.22;
+      camera.position.y = 6.3 + Math.cos(driftAngle * 0.8) * 0.08;
+      camera.lookAt(0, 0.45, 0);
+
+      // ---------------- BEAT 1: REFUSED ORDER ----------------
+      if (t >= T_BEAT1_START && !flags.beat1Started) {
+        flags.beat1Started = true;
+        internal.addMark('refused', ORD_REFUSED, 'refusal', t);
+        internal.addElement(`packet:${ORD_REFUSED}`, t, ORD_REFUSED);
+
+        packetGroup.visible = true;
+        const sealMesh = packetGroup.getObjectByName('packetBlueSeal');
+        if (sealMesh) sealMesh.visible = false;
+
+        showBadge(badgePacket, 'Payment request', ORD_REFUSED, t);
+        setCaption(
+          'Gemini agent asked for research payment.',
+          ORD_REFUSED,
+          'Asked',
+          'status-packet',
+          t
+        );
+      }
+
+      if (t >= T_BEAT1_START && t < T_BEAT1_REFUSED) {
+        let px;
+        if (t < T_BEAT1_SPEND) {
+          const u = smoothstep((t - T_BEAT1_START) / (T_BEAT1_SPEND - T_BEAT1_START));
+          px = lerp(X_POS.agent, X_POS.spend, u);
+          spendGateArm.rotation.z = lerp(0, 0.45, u);
+        } else {
+          const u = smoothstep((t - T_BEAT1_SPEND) / (T_BEAT1_REFUSED - T_BEAT1_SPEND));
+          px = lerp(X_POS.spend, X_POS.vault, u);
+          spendGateArm.rotation.z = lerp(0.45, 0, u);
+        }
+        const arcY = 1.65 + Math.sin(((t - T_BEAT1_START) / (T_BEAT1_REFUSED - T_BEAT1_START)) * Math.PI) * 0.35;
+        packetGroup.position.set(px, arcY, 0.35);
+        packetGroup.rotation.y = Math.sin(t * 0.006) * 0.2;
+        projectToScreen(new THREE.Vector3(px, arcY + 0.5, 0.35), badgePacket);
+      }
+
+      if (t >= T_BEAT1_REFUSED && !flags.beat1Refused) {
+        flags.beat1Refused = true;
+        packetGroup.position.set(X_POS.vault - 0.55, 1.35, 0.45);
+        hideBadge(badgePacket);
+
+        internal.addElement(`refusal:${ORD_REFUSED}`, t, ORD_REFUSED);
+        refusalGroup.visible = true;
+
+        showBadge(badgeRefusal, `refused ${CODE_REFUSED}`, ORD_REFUSED, t);
+        setCaption(
+          `Vault refused the payment: ${CODE_REFUSED}`,
+          ORD_REFUSED,
+          'Refused',
+          'status-refused',
+          t
+        );
+      }
+
+      if (flags.beat1Refused && !flags.beat1Cleared) {
+        const pulse = 1 + Math.sin((t - T_BEAT1_REFUSED) * 0.008) * 0.06;
+        refusalGroup.scale.set(pulse, pulse, pulse);
+        projectToScreen(new THREE.Vector3(X_POS.vault, 2.95, 0.45), badgeRefusal);
+      }
+
+      if (t >= T_BEAT1_CLEAR && !flags.beat1Cleared) {
+        flags.beat1Cleared = true;
+        packetGroup.visible = false;
+        refusalGroup.visible = false;
+        hideBadge(badgeRefusal);
+        internal.removeElement(`packet:${ORD_REFUSED}`, t);
+        internal.removeElement(`refusal:${ORD_REFUSED}`, t);
+      }
+
+      // ---------------- BEAT 2: SETTLED ORDER ----------------
+      if (t >= T_BEAT2_START && !flags.beat2Started) {
+        flags.beat2Started = true;
+        internal.addMark('settled', ORD_SETTLED, 'coin', t);
+        internal.addElement(`packet:${ORD_SETTLED}`, t, ORD_SETTLED);
+
+        packetGroup.visible = true;
+        const sealMesh = packetGroup.getObjectByName('packetBlueSeal');
+        if (sealMesh) sealMesh.visible = false;
+
+        showBadge(badgePacket, `Request ${AMT_SETTLED}`, ORD_SETTLED, t);
+        setCaption(
+          `Gemini agent asked for ${AMT_SETTLED} payment.`,
+          ORD_SETTLED,
+          'Asked',
+          'status-packet',
+          t
+        );
+      }
+
+      if (t >= T_BEAT2_START && t < T_BEAT2_COIN) {
+        if (t < T_BEAT2_VAULT) {
+          let px;
+          if (t < T_BEAT2_SPEND) {
+            const u = smoothstep((t - T_BEAT2_START) / (T_BEAT2_SPEND - T_BEAT2_START));
+            px = lerp(X_POS.agent, X_POS.spend, u);
+            spendGateArm.rotation.z = lerp(0, 0.95, u);
+          } else {
+            const u = smoothstep((t - T_BEAT2_SPEND) / (T_BEAT2_VAULT - T_BEAT2_SPEND));
+            px = lerp(X_POS.spend, X_POS.vault, u);
+            spendGateArm.rotation.z = lerp(0.95, 0, u);
+          }
+          const arcY = 1.65 + Math.sin(((t - T_BEAT2_START) / (T_BEAT2_VAULT - T_BEAT2_START)) * Math.PI) * 0.35;
+          packetGroup.position.set(px, arcY, 0.35);
+          projectToScreen(new THREE.Vector3(px, arcY + 0.5, 0.35), badgePacket);
+        } else {
+          // At vault: sealed in blue before coin starts
+          if (!flags.beat2Sealed) {
+            flags.beat2Sealed = true;
+            const sealMesh = packetGroup.getObjectByName('packetBlueSeal');
+            if (sealMesh) sealMesh.visible = true;
+            vaultSealRing.visible = true;
+            vaultKeyMat.emissiveIntensity = 0.95;
+          }
+          packetGroup.position.set(X_POS.vault, 1.65, 0.55);
+          projectToScreen(new THREE.Vector3(X_POS.vault, 2.2, 0.55), badgePacket);
+        }
+      }
+
+      // Coin moves Buyer -> Merchant only AFTER vault seals packet
+      if (t >= T_BEAT2_COIN && !flags.beat2CoinStarted) {
+        flags.beat2CoinStarted = true;
+        packetGroup.visible = false;
+        hideBadge(badgePacket);
+        internal.removeElement(`packet:${ORD_SETTLED}`, t);
+
+        internal.addElement(`coin:${ORD_SETTLED}`, t, ORD_SETTLED);
+        coinGroup.visible = true;
+        showBadge(badgeCoin, AMT_SETTLED, ORD_SETTLED, t);
+      }
+
+      if (t >= T_BEAT2_COIN) {
+        if (t < T_BEAT2_MERCHANT) {
+          const u = smoothstep((t - T_BEAT2_COIN) / (T_BEAT2_MERCHANT - T_BEAT2_COIN));
+          const cx = lerp(X_POS.buyer, X_POS.merchant, u);
+          const cy = 1.55 + Math.sin(u * Math.PI) * 1.15;
+          coinGroup.position.set(cx, cy, 0.65);
+          coinGroup.rotation.y = (t - T_BEAT2_COIN) * 0.006;
+          projectToScreen(new THREE.Vector3(cx, cy + 0.55, 0.65), badgeCoin);
+        } else {
+          // Coin lands at Merchant (Chain is never the recipient of the coin)
+          coinGroup.position.set(X_POS.merchant, 1.35, 0.72);
+          coinGroup.rotation.y = Math.sin(t * 0.003) * 0.25;
+          projectToScreen(new THREE.Vector3(X_POS.merchant, 2.05, 0.72), badgeCoin);
+
+          if (!flags.beat2MerchantLit) {
+            flags.beat2MerchantLit = true;
+            setMerchantLit(true);
+          }
+        }
+      }
+
+      // Separate ledger cue on Base Sepolia Chain: appended red block + pulse
+      if (t >= T_BEAT2_LEDGER && !flags.beat2LedgerAdded) {
+        flags.beat2LedgerAdded = true;
+        internal.addElement(`ledger:${ORD_SETTLED}`, t, ORD_SETTLED);
+        appendedLedgerBlockGroup.visible = true;
+
+        showBadge(badgeSettled, `${AMT_SETTLED} · ${HASH_SETTLED}`, ORD_SETTLED, t);
+        setCaption(
+          `Settled on Base Sepolia: ${AMT_SETTLED}, receipt ${HASH_SETTLED}`,
+          ORD_SETTLED,
+          'Settled',
+          'status-settled',
+          t
+        );
+      }
+
+      if (flags.beat2LedgerAdded) {
+        const dtLedger = t - T_BEAT2_LEDGER;
+        const pulsePhase = (dtLedger % 1600) / 1600;
+        const ringScale = 1 + pulsePhase * 1.6;
+        ledgerPulseRing.scale.set(ringScale, ringScale, 1);
+        ledgerPulseRing.material.opacity = Math.max(0, 0.85 * (1 - pulsePhase));
+        projectToScreen(new THREE.Vector3(X_POS.chain, 2.35, 0.25), badgeSettled);
+      }
+
+      // Project static station labels
+      projectToScreen(new THREE.Vector3(X_POS.buyer, -0.72, 0.6), stationLabelEls.buyer);
+      projectToScreen(new THREE.Vector3(X_POS.agent, -0.72, 0.6), stationLabelEls.agent);
+      projectToScreen(new THREE.Vector3(X_POS.spend, -0.72, 0.6), stationLabelEls.spend);
+      projectToScreen(new THREE.Vector3(X_POS.vault, -0.72, 0.6), stationLabelEls.vault);
+      projectToScreen(new THREE.Vector3(X_POS.merchant, -0.72, 0.6), stationLabelEls.merchant);
+      projectToScreen(new THREE.Vector3(X_POS.chain, -0.72, 0.6), stationLabelEls.chain);
+
+      if (t >= T_DONE && !window.__theater.done) {
+        window.__theater.done = true;
+      }
+    }
+
+    function animate() {
+      updateTimeline();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    // Background timer backup so marks/done advance reliably even if rAF is throttled
+    setInterval(updateTimeline, 100);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

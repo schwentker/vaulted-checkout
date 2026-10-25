@@ -1,0 +1,2 @@
+{"t":0,"actor":"vault","kind":"refused","orderId":"ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa","code":"rule_payto"}
+{"t":1000,"actor":"chain","kind":"settled","orderId":"ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d","amount":"1.5","txHash":"0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a"}

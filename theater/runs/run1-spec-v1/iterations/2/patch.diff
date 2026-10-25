@@ -1,0 +1,293 @@
+--- 1/scene.html
++++ 2/scene.html
+@@ -649,57 +649,93 @@
+ 
+     // 5. MERCHANT STATION: Storefront; dark until it is paid
+     const merchantGroup = createPedestal(X_POS.merchant);
+-    const merchantBodyMat = new THREE.MeshStandardMaterial({ color: 0x24211e, roughness: 0.85 });
+-    const merchantAwningMat = new THREE.MeshStandardMaterial({ color: 0x1b1917, roughness: 0.8 });
++    const merchantBuildingGroup = new THREE.Group();
++    merchantGroup.add(merchantBuildingGroup);
++
++    const merchantBodyMat = new THREE.MeshStandardMaterial({
++      color: 0x24211e,
++      emissive: 0x000000,
++      emissiveIntensity: 0.0,
++      roughness: 0.85
++    });
++    const merchantAwningMat = new THREE.MeshStandardMaterial({
++      color: 0x1b1917,
++      emissive: 0x000000,
++      emissiveIntensity: 0.0,
++      roughness: 0.8
++    });
+     const merchantWinMat = new THREE.MeshStandardMaterial({
+       color: 0x151311,
+       emissive: 0x000000,
+       emissiveIntensity: 0.0,
+-      roughness: 0.5
++      roughness: 0.4
+     });
+     let merchantGlowLight;
++    let merchantRoofBeacon;
+     {
+       const shopBody = new THREE.Mesh(new THREE.BoxGeometry(1.85, 1.75, 1.4), merchantBodyMat);
+       shopBody.position.set(0, 1.1, 0);
+       shopBody.castShadow = true;
+-      merchantGroup.add(shopBody);
++      merchantBuildingGroup.add(shopBody);
+ 
+       const awning = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.28, 0.65), merchantAwningMat);
+       awning.position.set(0, 1.62, 0.58);
+       awning.rotation.x = 0.22;
+-      merchantGroup.add(awning);
++      merchantBuildingGroup.add(awning);
+ 
+-      const leftWindow = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.06), merchantWinMat);
++      const leftWindow = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.08), merchantWinMat);
+       leftWindow.position.set(-0.42, 0.98, 0.71);
+-      merchantGroup.add(leftWindow);
++      merchantBuildingGroup.add(leftWindow);
+ 
+-      const rightWindow = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.06), merchantWinMat);
++      const rightWindow = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.08), merchantWinMat);
+       rightWindow.position.set(0.42, 0.98, 0.71);
+-      merchantGroup.add(rightWindow);
++      merchantBuildingGroup.add(rightWindow);
+ 
+-      const signBoard = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.28, 0.1), merchantWinMat);
+-      signBoard.position.set(0, 2.12, 0.45);
+-      merchantGroup.add(signBoard);
++      const signBoard = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.34, 0.12), merchantWinMat);
++      signBoard.position.set(0, 2.15, 0.45);
++      merchantBuildingGroup.add(signBoard);
+ 
+-      merchantGlowLight = new THREE.PointLight(0xffdf80, 0, 4.2);
+-      merchantGlowLight.position.set(0, 1.25, 1.2);
+-      merchantGroup.add(merchantGlowLight);
++      merchantRoofBeacon = new THREE.Mesh(
++        new THREE.SphereGeometry(0.22, 18, 18),
++        new THREE.MeshStandardMaterial({
++          color: 0xffe680,
++          emissive: 0xffb700,
++          emissiveIntensity: 1.2
++        })
++      );
++      merchantRoofBeacon.position.set(0, 2.52, 0.45);
++      merchantRoofBeacon.visible = false;
++      merchantBuildingGroup.add(merchantRoofBeacon);
++
++      merchantGlowLight = new THREE.PointLight(0xffd24c, 0, 5.5);
++      merchantGlowLight.position.set(0, 1.35, 1.35);
++      merchantBuildingGroup.add(merchantGlowLight);
+     }
+ 
+     function setMerchantLit(lit) {
+       if (lit) {
+-        merchantBodyMat.color.setHex(0xe8d9be);
+-        merchantAwningMat.color.setHex(0x3a322b);
+-        merchantWinMat.color.setHex(0xfff1a8);
+-        merchantWinMat.emissive.setHex(0xffc940);
+-        merchantWinMat.emissiveIntensity = 0.85;
+-        merchantGlowLight.intensity = 1.6;
++        merchantBodyMat.color.setHex(0xfff3d1);
++        merchantBodyMat.emissive.setHex(0xd99b26);
++        merchantBodyMat.emissiveIntensity = 0.32;
++        merchantAwningMat.color.setHex(0x5c3d1e);
++        merchantAwningMat.emissive.setHex(0x8a5a24);
++        merchantAwningMat.emissiveIntensity = 0.25;
++        merchantWinMat.color.setHex(0xfff099);
++        merchantWinMat.emissive.setHex(0xffbe1a);
++        merchantWinMat.emissiveIntensity = 1.35;
++        merchantRoofBeacon.visible = true;
++        merchantGlowLight.intensity = 2.4;
+       } else {
+         merchantBodyMat.color.setHex(0x24211e);
++        merchantBodyMat.emissive.setHex(0x000000);
++        merchantBodyMat.emissiveIntensity = 0.0;
+         merchantAwningMat.color.setHex(0x1b1917);
++        merchantAwningMat.emissive.setHex(0x000000);
++        merchantAwningMat.emissiveIntensity = 0.0;
+         merchantWinMat.color.setHex(0x151311);
+         merchantWinMat.emissive.setHex(0x000000);
+         merchantWinMat.emissiveIntensity = 0.0;
++        merchantRoofBeacon.visible = false;
+         merchantGlowLight.intensity = 0;
+       }
+     }
+@@ -735,7 +771,7 @@
+         }
+       });
+ 
+-      // 4th block that is appended to the chain row with a pulse when payment settles
++      // 4th block appended to the chain row with a pulse when payment settles
+       const newLink = new THREE.Mesh(
+         new THREE.CylinderGeometry(0.055, 0.055, 0.22, 10),
+         linkMat
+@@ -817,11 +853,11 @@
+     const redCoinMesh = new THREE.Group();
+     {
+       const coinDisc = new THREE.Mesh(
+-        new THREE.CylinderGeometry(0.42, 0.42, 0.14, 28),
++        new THREE.CylinderGeometry(0.44, 0.44, 0.15, 28),
+         new THREE.MeshStandardMaterial({
+           color: COL_RED,
+           emissive: COL_RED_LIGHT,
+-          emissiveIntensity: 0.35,
++          emissiveIntensity: 0.4,
+           roughness: 0.3,
+           metalness: 0.25
+         })
+@@ -830,7 +866,7 @@
+       redCoinMesh.add(coinDisc);
+ 
+       const coinRim = new THREE.Mesh(
+-        new THREE.TorusGeometry(0.42, 0.04, 12, 28),
++        new THREE.TorusGeometry(0.44, 0.045, 12, 28),
+         new THREE.MeshStandardMaterial({ color: 0xffb4ab, roughness: 0.3 })
+       );
+       redCoinMesh.add(coinRim);
+@@ -873,7 +909,7 @@
+       projectToScreen(new THREE.Vector3(X_POS.chain, -0.58, 1.3), domLabels.chain, 0);
+ 
+       projectToScreen(new THREE.Vector3(X_POS.vault, 3.05, 0), domLabels.refusal, 160);
+-      projectToScreen(new THREE.Vector3(7.6, 2.85, 0), domLabels.settled, 175);
++      projectToScreen(new THREE.Vector3(X_POS.chain, 2.35, 0), domLabels.settled, 175);
+     }
+ 
+     // Replay State Flags (driven by events array in file order)
+@@ -903,10 +939,17 @@
+       return new THREE.Vector3(x, y, 0.85);
+     }
+ 
+-    // Timeline Schedule (35s declared duration, 32.5s completion after final hold)
+-    // Beat 1 (ev0: refused): 1500ms -> 14000ms (12.5s beat)
+-    // Beat 2 (ev1: settled): 14000ms -> 28000ms (14.0s beat)
+-    // Final hold: 22500ms -> 32500ms, then done = true
++    // Timeline Schedule (35s declared duration)
++    // Beat 1 (ev0: refused):
++    //   1.5s - 4.8s: packet travels agent -> spend -> vault
++    //   4.8s - 14.0s: vault shows refusal mark, refusal label, and caption
++    // Beat 2 (ev1: settled):
++    //   14.0s - 17.0s: packet travels agent -> spend -> vault
++    //   17.0s - 18.0s: vault seals packet in blue
++    //   18.0s - 21.0s: red coin travels Buyer -> Merchant
++    //   21.0s: coin arrives at Merchant, Merchant immediately lights up
++    //   21.5s: Base Sepolia appends new red ledger block with pulse + receipt label + settled caption
++    //   21.5s - 31.5s: final state holds cleanly, then done = true
+     function updateTimeline(nowMs) {
+       // Gentle camera drift that keeps all 6 stations well inside frame
+       const driftAngle = nowMs * 0.00025;
+@@ -972,19 +1015,19 @@
+         packetMesh1.visible = true;
+       }
+ 
+-      if (nowMs >= 14000 && nowMs < 19000) {
+-        if (nowMs < 15700) {
++      if (nowMs >= 14000 && nowMs < 18000) {
++        if (nowMs < 15500) {
+           // agent -> spend
+-          const u = (nowMs - 14000) / 1700;
++          const u = (nowMs - 14000) / 1500;
+           packetMesh1.position.copy(lerpPos(X_POS.agent, X_POS.spend, u, 0.55));
+           spendGateBar.rotation.z = Math.sin(u * Math.PI) * 0.48;
+-        } else if (nowMs < 17400) {
++        } else if (nowMs < 17000) {
+           // spend -> vault
+-          const u = (nowMs - 15700) / 1700;
++          const u = (nowMs - 15500) / 1500;
+           packetMesh1.position.copy(lerpPos(X_POS.spend, X_POS.vault, u, 0.45));
+           spendGateBar.rotation.z = 0;
+         } else {
+-          // At vault: vault seals packet in blue (key inside vault glows in place without moving)
++          // 17.0s - 18.0s: At vault, vault seals packet in blue (key inside vault glows in place without moving)
+           packetMesh1.position.set(X_POS.vault, 1.35, 0.9);
+           if (!state.ev1Sealed) {
+             state.ev1Sealed = true;
+@@ -995,37 +1038,47 @@
+         }
+       }
+ 
+-      // Only AFTER vault seals packet, red coin moves from Buyer company side to Merchant
+-      if (nowMs >= 19000 && !state.ev1CoinStarted) {
++      // 18.0s: Only AFTER vault seals packet, red coin moves from Buyer company side to Merchant
++      if (nowMs >= 18000 && !state.ev1CoinStarted) {
+         state.ev1CoinStarted = true;
+         packetMesh1.visible = false;
+         vaultInteriorLight.intensity = 1.0;
+ 
+         redCoinMesh.visible = true;
+-        redCoinMesh.position.set(X_POS.buyer, 1.35, 0.9);
++        redCoinMesh.position.set(X_POS.buyer, 1.35, 0.95);
+         internal.addElement(`coin:${ev1.orderId}`, nowMs, ev1.orderId);
+       }
+ 
+-      if (nowMs >= 19000 && nowMs < 22000) {
+-        const u = (nowMs - 19000) / 3000;
++      if (nowMs >= 18000 && nowMs < 21000) {
++        const u = (nowMs - 18000) / 3000;
+         // Buyer pays Merchant: red coin moves from buyer station to merchant station and stops there
+-        redCoinMesh.position.copy(lerpPos(X_POS.buyer, X_POS.merchant, u, 1.35));
+-        redCoinMesh.rotation.y = u * Math.PI * 2;
++        redCoinMesh.position.copy(lerpPos(X_POS.buyer, X_POS.merchant, u, 1.45));
++        redCoinMesh.rotation.z = -u * Math.PI * 2;
+       }
+ 
+-      if (nowMs >= 22000 && !state.ev1MerchantPaid) {
++      // 21.0s: Coin arrives at Merchant and Merchant immediately lights up
++      if (nowMs >= 21000 && !state.ev1MerchantPaid) {
+         state.ev1MerchantPaid = true;
+         // Coin rests at the Merchant (never enters the chain)
+-        redCoinMesh.position.set(X_POS.merchant, 1.25, 0.92);
+-        redCoinMesh.rotation.y = 0;
++        redCoinMesh.position.set(X_POS.merchant, 1.25, 0.95);
++        redCoinMesh.rotation.set(0, 0, 0);
+         setMerchantLit(true);
+       }
+ 
+-      // Separate ledger cue on Base Sepolia chain: new red block appended with pulse, no coin entering it
+-      if (nowMs >= 22500 && !state.ev1Settled) {
++      if (state.ev1MerchantPaid) {
++        const paidDt = nowMs - 21000;
++        if (paidDt < 900) {
++          const bounce = 1 + 0.14 * Math.sin((paidDt / 900) * Math.PI);
++          merchantBuildingGroup.scale.set(bounce, bounce, bounce);
++        } else {
++          merchantBuildingGroup.scale.set(1, 1, 1);
++        }
++      }
++
++      // 21.5s: Right after coin arrives at Merchant and Merchant lights up, Base Sepolia appends new block + pulse, receipt label & settled caption
++      if (nowMs >= 21500 && !state.ev1Settled) {
+         state.ev1Settled = true;
+         settledBlockMesh.visible = true;
+-        internal.addElement(`ledger:${ev1.orderId}`, nowMs, ev1.orderId);
+ 
+         const shortHash = ev1.txHash.slice(0, 10);
+         const settledLabelPlain = `${ev1.amount} USDC ${shortHash} ${ev1.orderId}`;
+@@ -1042,11 +1095,11 @@
+ 
+       // Ledger inclusion pulse animation on the newly appended 4th chain block
+       if (state.ev1Settled) {
+-        const dt = nowMs - 22500;
++        const dt = nowMs - 21500;
+         if (dt < 2400) {
+-          const pulse = 1 + 0.28 * Math.sin((dt / 2400) * Math.PI * 3) * (1 - dt / 2400);
++          const pulse = 1 + 0.32 * Math.sin((dt / 2400) * Math.PI * 3) * (1 - dt / 2400);
+           newBlkMesh.scale.set(pulse, pulse, pulse);
+-          const ringScale = 1 + 0.45 * Math.sin((dt / 2400) * Math.PI * 2);
++          const ringScale = 1 + 0.5 * Math.sin((dt / 2400) * Math.PI * 2);
+           ledgerPulseRing.scale.set(ringScale, ringScale, 1);
+         } else {
+           newBlkMesh.scale.set(1, 1, 1);
+@@ -1054,8 +1107,8 @@
+         }
+       }
+ 
+-      // Final state holds from 22.5s to 32.5s (well over 3-5s hold), then done = true
+-      if (nowMs >= 32500 && !theater.done) {
++      // Final state holds from 21.5s to 31.5s, then done = true
++      if (nowMs >= 31500 && !theater.done) {
+         theater.done = true;
+       }
+     }

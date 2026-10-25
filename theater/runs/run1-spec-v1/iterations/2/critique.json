@@ -1,0 +1,22 @@
+{
+  "scores": {
+    "legibility": 9,
+    "sequence": 9,
+    "beat_discipline": 9,
+    "style": 9,
+    "truth_visual": 9
+  },
+  "issues": [
+    {
+      "at_seconds": 17,
+      "severity": "low",
+      "rule": "Beats per event kind: refused vs settled",
+      "saw": "When the second order (ord_99b70e93...) reaches the vault and gets sealed with a blue checkmark, the refusal badge ('refused rule_payto') from the first order remains floating above the vault, making the vault display both a cross and a checkmark simultaneously.",
+      "expected": "While keeping past order badges visible is fine, having both a cross seal and a check seal on the vault door or immediately above it can slightly clutter the vault's current state.",
+      "fix": "Either fade/dim the refusal cross on the vault door when the new order is sealed (keeping the floating label if desired) or position the floating refusal tag slightly to the left so the vault's active state is unmistakable."
+    }
+  ],
+  "verdict": "pass",
+  "retried": false,
+  "response_sha256": "5425d199bc99e304a63d9ba147d97f2f9c18677bed634183c3ad43587b1077d6"
+}
