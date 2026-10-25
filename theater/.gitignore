@@ -1,0 +1,3 @@
+iterations/*/page@*.webm
+runs/*/*/page@*.webm
+packets/**/render*.webm
