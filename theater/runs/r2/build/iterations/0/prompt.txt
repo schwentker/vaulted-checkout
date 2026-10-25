@@ -1,0 +1,11 @@
+You are generating a single-file 3D replay scene.
+
+Attached: spec.md (the goal and the scene contract) and events.jsonl (the real payment log, one JSON object per line).
+
+Write scene.html that follows spec.md exactly. Embed the events array verbatim in <script type="application/json" id="events">. Expose window.__theater exactly as the contract says, including marks and the cumulative snapshot(). Use three.js only from the pinned CDN URL in spec.md. No other network requests, no console errors, real-time playback of 30 to 45 seconds.
+
+Answer with exactly one fenced code block tagged html containing the whole file, and nothing else.
+
+--- attached files ---
+spec.md sha256 ec8ea9656e2ac389ca5888cb908d9d57181402bc21bbe0d9de25ad63ccfeabe2
+events.jsonl sha256 d607462f5e93f90bc5073797737846f225fa009b947040f01fcdaf6aead4dbe5

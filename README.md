@@ -2,7 +2,7 @@
 
 AI agents can ask to pay. Only a vault can sign, and only inside fixed rules.
 
-A Gemini agent shops over MCP and pays in USDC on Base Sepolia. The wallet key never touches the agent, the buyer's spend service, or any AI session. It lives in a Basis Theory vault, and a Reactor signs only the payments that pass the vault's own checks. A second part of the project uses Gemini 4 Argon to build, watch, critique and repair a visual replay of the payment log, scored by a frozen evaluator that Argon cannot edit.
+A Gemini agent shops over MCP and pays in USDC on Base Sepolia. The wallet key never touches the agent, the buyer's spend service, or any AI session. It lives in a Basis Theory vault, and a Reactor signs only the payments that pass the vault's own checks. A second part of the project uses Gemini 4 Argon to build, watch, critique and repair a visual replay of the payment log, scored by a frozen evaluator that Argon cannot edit (see Spend Theater below).
 
 ## Why it matters
 
