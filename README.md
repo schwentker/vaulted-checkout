@@ -1,4 +1,6 @@
-# Vaulted Checkout
+# Vaulted Checkout, with Spend Theater
+
+Vaulted Checkout is the payment system. Spend Theater is the Gemini 4 Argon part: it takes Vaulted Checkout's real payment log and builds, watches, critiques and repairs a short 3D film of every payment the agent tried, scored by a frozen evaluator Argon cannot edit.
 
 AI agents can ask to pay. Only a vault can sign, and only inside fixed rules.
 
