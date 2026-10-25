@@ -8,7 +8,10 @@ const port=Number(process.env.MERCHANT_PORT??4000);
 if(!Number.isSafeInteger(port)||port<1||port>65535)throw new Error('bad_port');
 const origin=process.env.MERCHANT_ORIGIN??`http://127.0.0.1:${port}`;
 const payTo=process.env.MERCHANT_PAYTO??'';
-const store=new MerchantStore(process.env.MERCHANT_DB_PATH??'merchant.sqlite',[{id:'demo',name:'Demo resource',unitAmount:'1500000',currency:'USDC'}]);
+const store=new MerchantStore(process.env.MERCHANT_DB_PATH??'merchant.sqlite',[
+  {id:'paper-tox-2026',name:'Paper: early hepatotoxicity signals in kinase inhibitors (PDF)',unitAmount:'1500000',currency:'USDC'},
+  {id:'dataset-tox-full',name:'Full assay dataset, 40k compounds (CSV)',unitAmount:'7500000',currency:'USDC'},
+]);
 store.recoverInterrupted();
 const service=new MerchantService(store,{origin,payTo,maxTimeoutSeconds:300},publicFacilitator(),new RpcChain(process.env.RPC_URL));
 const server=merchantServer(service);const stop=service.startReconcileJob();
