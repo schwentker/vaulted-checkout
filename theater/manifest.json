@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "iteration0": {
+    "mode": "api",
+    "events_file": "/Users/andres/dev/vaulted-checkout-theater/fixtures/events-gate-b.jsonl",
+    "events_sha256": "d607462f5e93f90bc5073797737846f225fa009b947040f01fcdaf6aead4dbe5",
+    "spec_sha256": "7933261f991899cb23baaba6f1e9137832023261c085b555f9aebd2aa47a3d3f",
+    "prompt_sha256": "91b663137e4782dc93a34cff3524ebda3ef5327b9f8ea30b1ea9a42724ef4b0e",
+    "response_sha256": "02cc5b4235c326f566e0c03c138db5521e3ee5dd5130be97d400e290c41930e3",
+    "response_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/0/generate.response.json",
+    "scene_sha256": "3fd9506db3bdf0a77c47f5eb6faff8953468a5b51fec13fe3960cbf075cf40b3",
+    "created": "2026-10-25T20:55:52.298Z"
+  },
+  "calls": [
+    {
+      "at": "2026-10-25T20:55:52.292Z",
+      "mode": "api",
+      "run": "iteration0",
+      "step": "generate",
+      "iteration": 0,
+      "model": "gemini-4-argon",
+      "thinking_level": "high",
+      "prompt_sha256": "5c0dac298627f10a50db8420f8bba6abc2afd4f3f5fc7b63bfeb6836987ee080",
+      "inputs": {
+        "spec.md": "7933261f991899cb23baaba6f1e9137832023261c085b555f9aebd2aa47a3d3f",
+        "events.jsonl": "d607462f5e93f90bc5073797737846f225fa009b947040f01fcdaf6aead4dbe5"
+      },
+      "output_sha256": "02cc5b4235c326f566e0c03c138db5521e3ee5dd5130be97d400e290c41930e3",
+      "output_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/0/generate.response.json"
+    },
+    {
+      "at": "2026-10-25T20:59:49.832Z",
+      "mode": "api",
+      "run": "iterations",
+      "step": "critique",
+      "iteration": 0,
+      "model": "gemini-4-argon",
+      "thinking_level": "medium",
+      "prompt_sha256": "aa37ed371b3a168f36895da9e055b15aaad7d3dabc24a272b227d476c204581a",
+      "inputs": {
+        "render.webm": "4b76e7524b67244db8f51dd21fec36092dbd58396935ae08f4ccbd0506ff0331",
+        "spec.md": "24153670f6cfaef6181396c7607bb4576c9c6a30e9a0ee8256c3184120c6607e",
+        "rubric.md": "95039827f4c80bf2362467a9938f0133043cf37cb5f12f21d5dbd5a960a3ecf8",
+        "events.jsonl": "d607462f5e93f90bc5073797737846f225fa009b947040f01fcdaf6aead4dbe5",
+        "checks.json": "c9eec95023720c34b4693363c7fcea7fb81df45c70a158e337df9a169cd4e704"
+      },
+      "output_sha256": "6dcf36fe65ebf0345642ae700c1af574914ffac41ab5327bf70dd6e622543157",
+      "output_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/0/critique.response.json"
+    },
+    {
+      "at": "2026-10-25T21:03:19.591Z",
+      "mode": "api",
+      "run": "iterations",
+      "step": "repair",
+      "iteration": 0,
+      "model": "gemini-4-argon",
+      "thinking_level": "high",
+      "prompt_sha256": "4c74f2f999f6111194fde6d222f6a1743a507ef7d6f35c9e651d9e525cae99fd",
+      "inputs": {
+        "scene.html": "3fd9506db3bdf0a77c47f5eb6faff8953468a5b51fec13fe3960cbf075cf40b3",
+        "critique.json": "87b2c7f4dd6ca12e06bb425af3432bca84d8e5fee627ba7298479407ecc6d68d",
+        "checks.json": "c9eec95023720c34b4693363c7fcea7fb81df45c70a158e337df9a169cd4e704",
+        "spec.md": "24153670f6cfaef6181396c7607bb4576c9c6a30e9a0ee8256c3184120c6607e"
+      },
+      "output_sha256": "4420b412bd1b95ccd52b2e8abd1e495025189cf17f16f61f0e2f1f0d8e98e788",
+      "output_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/0/repair.response.json"
+    },
+    {
+      "at": "2026-10-25T21:04:10.986Z",
+      "mode": "api",
+      "run": "iterations",
+      "step": "critique",
+      "iteration": 1,
+      "model": "gemini-4-argon",
+      "thinking_level": "medium",
+      "prompt_sha256": "aa37ed371b3a168f36895da9e055b15aaad7d3dabc24a272b227d476c204581a",
+      "inputs": {
+        "render.webm": "fe6364096fc16cf875744a84f6f71bb68374356232bf25ba2893d9139a078c77",
+        "spec.md": "24153670f6cfaef6181396c7607bb4576c9c6a30e9a0ee8256c3184120c6607e",
+        "rubric.md": "95039827f4c80bf2362467a9938f0133043cf37cb5f12f21d5dbd5a960a3ecf8",
+        "events.jsonl": "d607462f5e93f90bc5073797737846f225fa009b947040f01fcdaf6aead4dbe5",
+        "checks.json": "9502f09fbf79fd65489bbf6f9ec7a707aef6ed40b598207f89dda789311dd97d"
+      },
+      "output_sha256": "465d79bfee84dec44d7d59c26777d8ff975c158f63d4a0cab54e58ac6c028345",
+      "output_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/1/critique.response.json"
+    },
+    {
+      "at": "2026-10-25T21:13:34.669Z",
+      "mode": "api",
+      "run": "iterations",
+      "step": "repair",
+      "iteration": 1,
+      "model": "gemini-4-argon",
+      "thinking_level": "high",
+      "prompt_sha256": "4c74f2f999f6111194fde6d222f6a1743a507ef7d6f35c9e651d9e525cae99fd",
+      "inputs": {
+        "scene.html": "e1124e68cb6f6b29b03e5dbd602d52bf4dc3dd6f78e54a305af248fa5d645b18",
+        "critique.json": "8a6af5051266cb1767d53f368cb77a80598f4aa6499746217b1964ce60f661ff",
+        "checks.json": "9502f09fbf79fd65489bbf6f9ec7a707aef6ed40b598207f89dda789311dd97d",
+        "spec.md": "24153670f6cfaef6181396c7607bb4576c9c6a30e9a0ee8256c3184120c6607e"
+      },
+      "output_sha256": "eb0013653fe3fd0ec5a069be18f9339dac9f12084b311d1d765290d9f2bed823",
+      "output_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/1/repair.response.json"
+    },
+    {
+      "at": "2026-10-25T21:14:21.726Z",
+      "mode": "api",
+      "run": "iterations",
+      "step": "critique",
+      "iteration": 2,
+      "model": "gemini-4-argon",
+      "thinking_level": "medium",
+      "prompt_sha256": "aa37ed371b3a168f36895da9e055b15aaad7d3dabc24a272b227d476c204581a",
+      "inputs": {
+        "render.webm": "fda0c70ee8a117dea930f661008282d904757a99c4a7f0757a0eb79e94943305",
+        "spec.md": "24153670f6cfaef6181396c7607bb4576c9c6a30e9a0ee8256c3184120c6607e",
+        "rubric.md": "95039827f4c80bf2362467a9938f0133043cf37cb5f12f21d5dbd5a960a3ecf8",
+        "events.jsonl": "d607462f5e93f90bc5073797737846f225fa009b947040f01fcdaf6aead4dbe5",
+        "checks.json": "daf414e79812c5fe0e996cf8e386546720069f6f445032a51b7a487f3566ccde"
+      },
+      "output_sha256": "5425d199bc99e304a63d9ba147d97f2f9c18677bed634183c3ad43587b1077d6",
+      "output_file": "/Users/andres/dev/vaulted-checkout-theater/theater/iterations/2/critique.response.json"
+    }
+  ]
+}

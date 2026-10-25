@@ -1,0 +1,26 @@
+[
+  {
+    "iteration": 0,
+    "contradictions": 0,
+    "order_errors": 0,
+    "amount_errors": 0,
+    "render_failures": 2,
+    "total_bad": 2
+  },
+  {
+    "iteration": 1,
+    "contradictions": 0,
+    "order_errors": 0,
+    "amount_errors": 0,
+    "render_failures": 1,
+    "total_bad": 1
+  },
+  {
+    "iteration": 2,
+    "contradictions": 0,
+    "order_errors": 0,
+    "amount_errors": 0,
+    "render_failures": 0,
+    "total_bad": 0
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "scores": {
+    "legibility": 7,
+    "sequence": 4,
+    "beat_discipline": 8,
+    "style": 9,
+    "truth_visual": 5
+  },
+  "issues": [
+    {
+      "at_seconds": 1,
+      "severity": "high",
+      "rule": "Scene contract: Bind payment things to their order",
+      "saw": "checks.json reports 2 render_failures of code 'unbound_element_event' at indices 6 and 8 in snapshot().elements.",
+      "expected": "Every non-station moving/event element in snapshot().elements must be bound to an orderId via naming (`packet:<orderId>`, `refusal:<orderId>`, `coin:<orderId>`, `ledger:<orderId>`) or an explicit `orderId` field.",
+      "fix": "Ensure all event-related elements recorded in `snapshot().elements` (such as packets, seals, refusal marks, coins, and ledger blocks) include the `orderId` property and/or use the `<role>:<orderId>` naming format."
+    },
+    {
+      "at_seconds": 18,
+      "severity": "high",
+      "rule": "Beats per event kind (`settled`): a red coin moves from the Buyer company side to the merchant: the buyer pays the merchant, and the chain is not the recipient. The chain then shows a separate ledger cue: a new red block is appended to the chain row... no coin entering it.",
+      "saw": "At 00:18–00:21, the red coin originates at the Vault, passes through the Merchant, and travels all the way to the Base Sepolia chain where it lands on top of the chain blocks.",
+      "expected": "The red coin must start at the Buyer company (`buyer`) and travel to the Merchant (`merchant`) and stop there (representing buyer paying merchant). Separately, a new red block (`ledger:<orderId>`) is appended to the row of blocks at the Base Sepolia chain with a pulse, with no coin entering the chain.",
+      "fix": "Animate the red coin starting from the `buyer` station x-position and ending at the `merchant` station x-position. Once the coin reaches the merchant, light up the merchant and separately spawn/append a fourth red cylinder/block onto the `chain` station (`ledger:<orderId>`) with a scale/pulse animation."
+    },
+    {
+      "at_seconds": 18,
+      "severity": "medium",
+      "rule": "Stage / Truth rules: The key is drawn inside it and never leaves it / Refusal mark is for the refused order only",
+      "saw": "The blue circular cross refusal badge (`X`) from the first refused order remains prominently on the front of the vault at 00:18 when the second order is sealed and settled, making the vault look simultaneously refused and sealed.",
+      "expected": "If the log has a refusal and a settlement for different orders, they are two separate stories; the vault should clearly show a blue seal for the settled order without the cross mark blocking/confusing the vault face during the settlement beat.",
+      "fix": "Clear or move aside the 3D cross badge on the vault door before the second order's packet reaches the vault (while keeping the `refused rule_payto` label with its orderId visible above or recorded properly in history) so the vault clearly displays a positive blue seal for the settled order."
+    },
+    {
+      "at_seconds": 22,
+      "severity": "medium",
+      "rule": "Legibility: Read labels and captions at 1280x720 without zooming. Check size, contrast, overlap, and time on screen.",
+      "saw": "At 00:22, the red floating badge `1.5 USDC · 0xd026fed3 ord_99b70e93-...` extends past the right edge of the 1280x720 viewport, clipping the end of the `orderId` token.",
+      "expected": "All floating badges and orderId tokens must stay fully inside the 1280x720 frame without clipping.",
+      "fix": "Position the settled floating badge centered over the `merchant` or shift its CSS left/transform so it does not overflow the right edge of the screen, and reduce the badge font size or wrap the `orderId` onto a second line inside the badge."
+    }
+  ],
+  "verdict": "revise",
+  "retried": false,
+  "response_sha256": "6dcf36fe65ebf0345642ae700c1af574914ffac41ab5327bf70dd6e622543157"
+}

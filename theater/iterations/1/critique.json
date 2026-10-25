@@ -1,0 +1,30 @@
+{
+  "scores": {
+    "legibility": 9,
+    "sequence": 7,
+    "beat_discipline": 6,
+    "style": 9,
+    "truth_visual": 9
+  },
+  "issues": [
+    {
+      "at_seconds": 19,
+      "severity": "high",
+      "rule": "Scene contract: Bind payment things to their order: name moving objects coin:<orderId>, refusal:<orderId>, packet:<orderId>, or add an explicit orderId field. (checks.json: unbound_element_event at index 8)",
+      "saw": "Deterministic check reports unbound_element_event at element index 8 in snapshot().elements.",
+      "expected": "Every dynamic payment element (packet, seal/settled, coin, ledger block, refusal) in snapshot().elements must either be named with the `<role>:<orderId>` prefix (e.g. `coin:ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d`, `ledger:ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d`, `settled:ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d`) or carry an explicit `orderId` property.",
+      "fix": "Inspect the 9th entry (index 8) pushed to `snapshot().elements` (likely the vault seal/settled element, coin, or ledger block for the second event) and ensure it includes `orderId: event.orderId` and/or uses the `role:orderId` naming convention."
+    },
+    {
+      "at_seconds": 19,
+      "severity": "medium",
+      "rule": "Beats per event kind (`settled`): a red coin moves from the Buyer company side to the merchant... The chain then shows a separate ledger cue: a new red block is appended to the chain row with a short 'recorded on the ledger' pulse, no coin entering it. Merchant lights up.",
+      "saw": "At t=19s, the red coin starts moving from the Buyer at the exact same moment the settled caption, the red label above the merchant, and the new red block + pulse on Base Sepolia appear. Meanwhile, the coin travels slowly and only reaches the merchant at t=28s (when the merchant lights up).",
+      "expected": "Sequential causality within the settled beat: first the packet is sealed at the vault (t=17-18s), then the red coin moves from Buyer to Merchant, then when the coin arrives at the Merchant, the Merchant lights up and the chain appends the new ledger block with the pulse, receipt label, and settled caption.",
+      "fix": "Speed up the coin travel from Buyer to Merchant (e.g., t=18s to t=21s), and trigger the merchant lighting up, the `1.5 USDC · 0xd026fed3` label, the appended chain block (`ledger:<orderId>`), and the settled caption upon or right after the coin's arrival at t=21s rather than at t=19s."
+    }
+  ],
+  "verdict": "revise",
+  "retried": false,
+  "response_sha256": "465d79bfee84dec44d7d59c26777d8ff975c158f63d4a0cab54e58ac6c028345"
+}
