@@ -1,0 +1,72 @@
+{
+  "run": "/Users/andres/dev/vaulted-checkout-theater/theater/runs/r2",
+  "model_judged_label": "model-judged, same model family as the generator",
+  "rows": [
+    {
+      "iteration": 0,
+      "contradictions": 0,
+      "order_errors": 0,
+      "amount_errors": 0,
+      "render_failures": 2,
+      "total_bad": 2,
+      "model_judged": {
+        "legibility": 6,
+        "sequence": 8,
+        "beat_discipline": 7,
+        "style": 9,
+        "truth_visual": 8
+      },
+      "verdict": "revise",
+      "issue_count": 5,
+      "still": "0/frame-4.png",
+      "video": "0/render.webm"
+    },
+    {
+      "iteration": 1,
+      "contradictions": 0,
+      "order_errors": 2,
+      "amount_errors": 0,
+      "render_failures": 0,
+      "total_bad": 2,
+      "model_judged": {
+        "legibility": 7,
+        "sequence": 7,
+        "beat_discipline": 6,
+        "style": 7,
+        "truth_visual": 7
+      },
+      "verdict": "revise",
+      "issue_count": 3,
+      "still": "1/frame-4.png",
+      "video": "1/render.webm"
+    },
+    {
+      "iteration": 2,
+      "contradictions": 0,
+      "order_errors": 0,
+      "amount_errors": 0,
+      "render_failures": 0,
+      "total_bad": 0,
+      "model_judged": {
+        "legibility": 8,
+        "sequence": 9,
+        "beat_discipline": 10,
+        "style": 9,
+        "truth_visual": 10
+      },
+      "verdict": "pass",
+      "issue_count": 2,
+      "still": "2/frame-4.png",
+      "video": "2/render.webm"
+    }
+  ],
+  "first_vs_last": {
+    "first": 0,
+    "last": 2,
+    "first_total_bad": 2,
+    "last_total_bad": 0
+  },
+  "regressions": [],
+  "stopped_early": true,
+  "summary": "Frozen checks improved from iteration 0 to the last: total_bad 2 -> 0. Stopped early at iteration 2: critic verdict pass and total_bad 0."
+}

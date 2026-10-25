@@ -1,0 +1,194 @@
+--- 1/scene.html
++++ 2/scene.html
+@@ -61,12 +61,12 @@
+   .dynamic-label {
+     position: absolute;
+     transform: translate(-50%, -50%);
+-    padding: 6px 12px;
++    padding: 4px 9px;
+     border-radius: 5px;
+     font-family: "Courier New", Courier, monospace;
+-    font-size: 13.5px;
++    font-size: 12.5px;
+     font-weight: 700;
+-    line-height: 1.3;
++    line-height: 1.2;
+     text-align: center;
+     white-space: nowrap;
+     box-shadow: 0 3px 8px rgba(28, 25, 21, 0.18);
+@@ -74,8 +74,9 @@
+   }
+   .dynamic-label .order-sub {
+     display: block;
+-    font-size: 11.5px;
++    font-size: 10px;
+     font-weight: 600;
++    letter-spacing: -0.02em;
+     opacity: 0.9;
+     margin-top: 2px;
+     white-space: nowrap;
+@@ -355,9 +356,24 @@
+   scene.add(fillLight);
+ 
+   // --- Shared Palette Materials ---
+-  const matPaperLight = new THREE.MeshStandardMaterial({ color: 0xede2cc, roughness: 0.85 });
+-  const matPaperMid = new THREE.MeshStandardMaterial({ color: 0xd9cbb0, roughness: 0.85 });
+-  const matPaperDark = new THREE.MeshStandardMaterial({ color: 0xb8a686, roughness: 0.85 });
++  const matPaperLight = new THREE.MeshStandardMaterial({
++    color: 0xede2cc,
++    emissive: 0xede2cc,
++    emissiveIntensity: 0.16,
++    roughness: 0.85
++  });
++  const matPaperMid = new THREE.MeshStandardMaterial({
++    color: 0xd9cbb0,
++    emissive: 0xd9cbb0,
++    emissiveIntensity: 0.18,
++    roughness: 0.85
++  });
++  const matPaperDark = new THREE.MeshStandardMaterial({
++    color: 0xb8a686,
++    emissive: 0xb8a686,
++    emissiveIntensity: 0.15,
++    roughness: 0.85
++  });
+   const matInk = new THREE.MeshStandardMaterial({ color: 0x26221d, roughness: 0.7 });
+ 
+   const matVaultBlue = new THREE.MeshStandardMaterial({ color: 0x1d5bbf, roughness: 0.4, metalness: 0.25 });
+@@ -389,24 +405,24 @@
+     metalness: 0.3
+   });
+ 
+-  // --- Stage Floor / Plinth ---
++  // --- Stage Floor / Plinth (warm paper/wood tones matching initial SVG) ---
+   const stageGroup = new THREE.Group();
+   scene.add(stageGroup);
+ 
+-  const plinthGeo = new THREE.BoxGeometry(30.5, 0.5, 6.4);
++  const plinthGeo = new THREE.BoxGeometry(30.5, 0.38, 6.4);
+   const plinthMesh = new THREE.Mesh(plinthGeo, matPaperMid);
+-  plinthMesh.position.set(0, -0.95, 0);
++  plinthMesh.position.set(0, -0.85, 0);
+   plinthMesh.receiveShadow = true;
+   stageGroup.add(plinthMesh);
+ 
+-  const trimGeo = new THREE.BoxGeometry(30.7, 0.08, 6.55);
+-  const trimMesh = new THREE.Mesh(trimGeo, matInk);
+-  trimMesh.position.set(0, -0.7, 0);
+-  stageGroup.add(trimMesh);
++  const plinthBaseGeo = new THREE.BoxGeometry(30.7, 0.16, 6.55);
++  const plinthBaseMesh = new THREE.Mesh(plinthBaseGeo, matPaperDark);
++  plinthBaseMesh.position.set(0, -1.12, 0);
++  stageGroup.add(plinthBaseMesh);
+ 
+   const requestTrackGeo = new THREE.BoxGeometry(10.0, 0.04, 0.14);
+   const requestTrackMesh = new THREE.Mesh(requestTrackGeo, matPaperDark);
+-  requestTrackMesh.position.set(-2.5, -0.67, 0);
++  requestTrackMesh.position.set(-2.5, -0.65, 0);
+   stageGroup.add(requestTrackMesh);
+ 
+   const STATION_X = {
+@@ -558,7 +574,6 @@
+ 
+   const vaultTopWall = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.8), matVaultBlue);
+   vaultTopWall.position.set(0, 2.29, 0.45);
+-  vaultTopWall.castShadow = true;
+   vaultGroup.add(vaultTopWall);
+ 
+   const vaultBottomWall = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.8), matVaultBlue);
+@@ -729,7 +744,7 @@
+ 
+   // Refusal mark at the vault (placed on lower-left of vault so it never collides with sealed packet on right)
+   const refusalMarkGroup = new THREE.Group();
+-  refusalMarkGroup.position.set(STATION_X.vault - 0.9, 1.05, 0.95);
++  refusalMarkGroup.position.set(STATION_X.vault - 1.0, 1.05, 0.95);
+   refusalMarkGroup.visible = false;
+   scene.add(refusalMarkGroup);
+ 
+@@ -881,10 +896,10 @@
+       } else if (elapsedMs < 6000) {
+         gateLampMat.emissiveIntensity = 0.2;
+         const p = easeInOutCubic(clamp01((elapsedMs - 4000) / 2000));
+-        px = STATION_X.spend + (STATION_X.vault - 0.9 - STATION_X.spend) * p;
++        px = STATION_X.spend + (STATION_X.vault - 1.0 - STATION_X.spend) * p;
+         py = 1.45 + Math.sin(p * Math.PI) * 0.45;
+       } else {
+-        px = STATION_X.vault - 0.9;
++        px = STATION_X.vault - 1.0;
+         py = 1.05;
+       }
+       packetRefusedMesh.position.set(px, py, 0.9);
+@@ -910,9 +925,9 @@
+     }
+ 
+     if (state.ev0RefusedShown) {
+-      // Positioned cleanly at lower-left of vault so high-arcing labels pass well above it
++      // Tier 3 (lowest floating tier, y = 2.05) anchored left of Vault so it stays well separated from Merchant & Chain labels
+       projectToScreen(
+-        new THREE.Vector3(STATION_X.vault - 0.65, 2.25, 0.9),
++        new THREE.Vector3(STATION_X.vault - 1.25, 2.05, 0.9),
+         refusalBadgeLabelEl
+       );
+     }
+@@ -927,13 +942,13 @@
+       state.ev1Started = true;
+       packetSettledMesh.visible = true;
+ 
+-      const reqText2 = `asked ${evSettled.amount} USDC ${evSettled.orderId}`;
+-      packetSettledLabelEl.innerHTML = `asked ${evSettled.amount} USDC<span class="order-sub">${evSettled.orderId}</span>`;
++      // Omit the settled amount before the settled mark is pushed so amount never appears before its event
++      const reqText2 = `asked ${evSettled.orderId}`;
++      packetSettledLabelEl.innerHTML = `asked<span class="order-sub">${evSettled.orderId}</span>`;
+       packetSettledLabelEl.style.display = 'block';
+       internal.recordLabel(reqText2, elapsedMs, evSettled.orderId);
+ 
+-      // Update caption immediately for Beat 2 so Beat 1's refusal caption does not linger
+-      setCaption(`Gemini agent asked for ${evSettled.amount} USDC`, evSettled.orderId, elapsedMs);
++      setCaption('Gemini agent asked for payment', evSettled.orderId, elapsedMs);
+     }
+ 
+     if (state.ev1Started) {
+@@ -959,7 +974,7 @@
+       }
+       packetSettledMesh.position.set(px, py, 0.9);
+       if (packetSettledLabelEl.style.display !== 'none') {
+-        // Elevated well above the vault refusal label (y=3.75 vs y=2.25) so they never overlap
++        // Elevated well above the vault refusal label (y=3.75 vs y=2.05) so they never overlap
+         projectToScreen(new THREE.Vector3(px, 3.75, 0.9), packetSettledLabelEl);
+       }
+     }
+@@ -992,14 +1007,16 @@
+     if (state.ev1CoinStarted) {
+       const p = easeInOutCubic(clamp01((elapsedMs - 19500) / 4500));
+       const cx = STATION_X.buyer + (STATION_X.merchant - STATION_X.buyer) * p;
+-      // High arc so the coin and its label pass well above the vault's refusal label
+-      const cy = 1.45 + Math.sin(p * Math.PI) * 2.25;
+-      const cz = 1.35 + Math.sin(p * Math.PI) * 0.4;
++      const cy = 1.45 + Math.sin(p * Math.PI) * 2.1;
++      const cz = 1.35 + Math.sin(p * Math.PI) * 0.35;
+       coinGroup.position.set(cx, cy, cz);
+       coinGroup.rotation.y = p * Math.PI * 4;
+-      const labelY = p < 1 ? cy + 1.05 : 2.55;
+-      const labelX = p < 1 ? cx : STATION_X.merchant - 0.35;
+-      projectToScreen(new THREE.Vector3(labelX, labelY, cz), coinLabelEl);
++
++      // Tier 2 (middle floating tier, y = 3.75 at rest, peaking at y = 4.60 mid-arc):
++      // stays at least 70px above Vault refusal label (y = 2.05) and 65px below Chain ledger label (y = 5.35)
++      const labelX = STATION_X.buyer + (STATION_X.merchant - 0.1 - STATION_X.buyer) * p;
++      const labelY = 3.75 + Math.sin(p * Math.PI) * 0.85;
++      projectToScreen(new THREE.Vector3(labelX, labelY, 0.9), coinLabelEl);
+     }
+ 
+     // Coin arrives at Merchant at 24000ms -> Merchant lights up & Settled caption appears
+@@ -1041,9 +1058,9 @@
+       } else {
+         ledgerPulseMat.opacity = 0;
+       }
+-      // Positioned above chain and shifted slightly left so single-line orderId fits cleanly in 1280x720
++      // Tier 1 (highest floating tier, y = 5.35) above Chain, 65px above Merchant coin label (y = 3.75)
+       projectToScreen(
+-        new THREE.Vector3(STATION_X.chain - 1.35, 3.65, 0.5),
++        new THREE.Vector3(STATION_X.chain - 1.15, 5.35, 0.5),
+         ledgerLabelEl
+       );
+     }

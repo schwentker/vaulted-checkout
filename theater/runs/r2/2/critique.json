@@ -1,0 +1,30 @@
+{
+  "scores": {
+    "legibility": 8,
+    "sequence": 9,
+    "beat_discipline": 10,
+    "style": 9,
+    "truth_visual": 10
+  },
+  "issues": [
+    {
+      "at_seconds": 6,
+      "severity": "low",
+      "rule": "legibility: Read labels and captions at 1280x720 without zooming. Check size, contrast, overlap, and time on screen.",
+      "saw": "The 'refused rule_payto' floating label over the Basis Theory vault overlaps the top crossbar of the Spend policy gate and later collides with the yellow packet label at 00:17.",
+      "expected": "Floating labels should not overlap neighboring station geometry or moving labels.",
+      "fix": "Raise the Y offset or shift the X offset slightly to the right for the vault refusal label so it sits cleanly above the blue vault box without clipping the spend policy gate."
+    },
+    {
+      "at_seconds": 6,
+      "severity": "low",
+      "rule": "Beats per event kind: The vault shows a refusal mark (blue seal with a cross)",
+      "saw": "On refusal, the vault shows the floating label 'refused rule_payto', but no distinct 3D blue seal with a cross is visible on or above the vault.",
+      "expected": "A visible blue seal with a cross should appear at the vault when a payment is refused.",
+      "fix": "Add a clearly visible blue badge/seal mesh with a cross icon on the front or top of the vault when the refusal occurs."
+    }
+  ],
+  "verdict": "pass",
+  "retried": false,
+  "response_sha256": "6d4db8ad012fff6cca67a75ecb456e245dfd290e5008804dd28d8c3d3fb28491"
+}

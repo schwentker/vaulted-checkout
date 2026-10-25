@@ -1,0 +1,38 @@
+{
+  "scores": {
+    "legibility": 7,
+    "sequence": 7,
+    "beat_discipline": 6,
+    "style": 7,
+    "truth_visual": 7
+  },
+  "issues": [
+    {
+      "at_seconds": 13,
+      "severity": "high",
+      "rule": "Nothing appears before its event / marks pushed when event becomes visible (checks.json: amount_before_event x2)",
+      "saw": "For the second event (`settled`, orderId `ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d`), the caption ('Gemini agent asked for 1.5 USDC') and the yellow packet label ('asked 1.5 USDC') display the amount '1.5 USDC' at 00:13, and the coin label ('1.5 USDC 0xd026fed3') appears at 00:19, both before the `settled` mark is recorded at 00:24.",
+      "expected": "No label or element containing the event's amount (`1.5 USDC`) or receipt (`0xd026fed3`) may appear in the snapshot before the event's mark time `t`, OR the `settled` event mark must be pushed when the event's sequence begins (or the preliminary request packet/caption should not include the amount before the settlement mark).",
+      "fix": "Either push the `settled` event mark at the start of the event beat (when the first label/element for that event becomes visible), or omit the amount `1.5 USDC` from the pre-settlement request packet label and caption so that `1.5 USDC` only appears at or after the `settled` mark timestamp."
+    },
+    {
+      "at_seconds": 2,
+      "severity": "medium",
+      "rule": "Style: Paper background with consistent visual hierarchy",
+      "saw": "At 00:02, the wooden stage platform suddenly turns solid black and stays black for the rest of the video.",
+      "expected": "The stage platform should keep its consistent warm wood/paper tone throughout the animation instead of turning black when the first event starts.",
+      "fix": "Do not overwrite the stage platform material color or lighting when the replay loop updates after t=2s."
+    },
+    {
+      "at_seconds": 22,
+      "severity": "medium",
+      "rule": "Legibility: check overlap of labels",
+      "saw": "From 00:22 to 00:35, the red coin label ('1.5 USDC 0xd026fed3...') above the Merchant overlaps the blue refusal label ('refused rule_payto...') above the Basis Theory vault, and also slightly overlaps the ledger label at 00:25.",
+      "expected": "Floating labels above adjacent stations (Vault, Merchant, Chain) must not overlap each other.",
+      "fix": "Offset the vertical positions (Y/top CSS coordinate) or horizontal anchoring of the vault refusal label, the merchant coin label, and the chain ledger label so their bounding boxes have clear separation at 1280x720."
+    }
+  ],
+  "verdict": "revise",
+  "retried": false,
+  "response_sha256": "a6eacb6c2a6652f4e7a24757138213e3c33461bb516edcab6f536dff99658f4a"
+}
