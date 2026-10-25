@@ -19,7 +19,8 @@
     "demo:local": "node scripts/demo-local.ts",
     "test:acceptance": "node --test tests/acceptance/*.test.ts",
     "theater:self-test": "node --test theater/eval/self-test.mjs",
-    "theater:verify": "node theater/eval/verify-frozen.mjs"
+    "theater:verify": "node theater/eval/verify-frozen.mjs",
+    "theater:test": "node --test theater/test/*.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
