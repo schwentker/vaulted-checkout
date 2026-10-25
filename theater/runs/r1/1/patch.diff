@@ -1,0 +1,441 @@
+--- 0/scene.html
++++ 1/scene.html
+@@ -214,19 +214,23 @@
+ 
+     .floating-badge {
+       position: absolute;
++      left: -9999px;
++      top: -9999px;
+       transform: translate(-50%, -100%);
+-      padding: 7px 12px;
++      padding: 6px 11px;
+       border-radius: 8px;
+-      font-size: 16px;
++      font-size: 15px;
+       font-weight: 800;
+       white-space: nowrap;
++      text-align: center;
+       box-shadow: 0 4px 12px rgba(28, 25, 23, 0.18);
+-      transition: opacity 0.2s ease;
+       opacity: 0;
++      visibility: hidden;
+       pointer-events: none;
+     }
+     .floating-badge.visible {
+       opacity: 1;
++      visibility: visible;
+     }
+     .floating-badge.badge-refusal {
+       background: #eff6ff;
+@@ -253,12 +257,12 @@
+       padding: 5px 10px;
+     }
+     .floating-badge .badge-order {
+-      display: inline-block;
++      display: block;
+       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+-      font-size: 11px;
++      font-size: 10px;
+       font-weight: 600;
+-      opacity: 0.82;
+-      margin-left: 6px;
++      opacity: 0.85;
++      margin-top: 2px;
+     }
+ 
+     #caption-bar {
+@@ -336,12 +340,12 @@
+         </div>
+       </div>
+ 
+-      <div id="label-buyer" class="station-label">Buyer<span class="sub">Drug-Discovery Co.</span></div>
+-      <div id="label-agent" class="station-label">Gemini Agent<span class="sub">Research Buyer</span></div>
+-      <div id="label-spend" class="station-label">Spend Policy<span class="sub">Policy Gate</span></div>
+-      <div id="label-vault" class="station-label vault-station">Basis Theory Vault<span class="sub">Wallet Key Inside</span></div>
+-      <div id="label-merchant" class="station-label">Merchant<span class="sub">Research Storefront</span></div>
+-      <div id="label-chain" class="station-label chain-station">Base Sepolia<span class="sub">On-Chain Ledger</span></div>
++      <div id="label-buyer" class="station-label" style="left: 13.3%; top: 72%;">Buyer<span class="sub">Drug-Discovery Co.</span></div>
++      <div id="label-agent" class="station-label" style="left: 28.0%; top: 72%;">Gemini Agent<span class="sub">Research Buyer</span></div>
++      <div id="label-spend" class="station-label" style="left: 42.6%; top: 72%;">Spend Policy<span class="sub">Policy Gate</span></div>
++      <div id="label-vault" class="station-label vault-station" style="left: 57.4%; top: 72%;">Basis Theory Vault<span class="sub">Wallet Key Inside</span></div>
++      <div id="label-merchant" class="station-label" style="left: 72.0%; top: 72%;">Merchant<span class="sub">Research Storefront</span></div>
++      <div id="label-chain" class="station-label chain-station" style="left: 86.7%; top: 72%;">Base Sepolia<span class="sub">On-Chain Ledger</span></div>
+ 
+       <div id="badge-packet" class="floating-badge badge-packet"></div>
+       <div id="badge-refusal" class="floating-badge badge-refusal"></div>
+@@ -391,27 +395,19 @@
+     const camera = new THREE.PerspectiveCamera(37, window.innerWidth / window.innerHeight, 0.1, 100);
+     camera.position.set(0, 6.3, 19.2);
+     camera.lookAt(0, 0.45, 0);
++    camera.updateMatrixWorld();
+ 
+-    const renderer = new THREE.WebGLRenderer({ antialias: true });
++    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+     renderer.setSize(window.innerWidth, window.innerHeight);
+-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+-    renderer.shadowMap.enabled = true;
+-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
++    renderer.setPixelRatio(1);
+     container.insertBefore(renderer.domElement, container.firstChild);
+ 
+     // Lighting
+-    const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.35);
++    const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.45);
+     scene.add(ambientLight);
+ 
+     const dirLight = new THREE.DirectionalLight(0xfffdf7, 1.45);
+     dirLight.position.set(7, 15, 11);
+-    dirLight.castShadow = true;
+-    dirLight.shadow.mapSize.width = 2048;
+-    dirLight.shadow.mapSize.height = 2048;
+-    dirLight.shadow.camera.left = -13;
+-    dirLight.shadow.camera.right = 13;
+-    dirLight.shadow.camera.top = 8;
+-    dirLight.shadow.camera.bottom = -8;
+     scene.add(dirLight);
+ 
+     const fillLight = new THREE.DirectionalLight(0xe5d6b8, 0.55);
+@@ -436,7 +432,6 @@
+       new THREE.MeshStandardMaterial({ color: 0xe6d8bc, roughness: 0.9 })
+     );
+     stageBase.position.set(0, -0.18, 0);
+-    stageBase.receiveShadow = true;
+     scene.add(stageBase);
+ 
+     const stageBorder = new THREE.Mesh(
+@@ -472,8 +467,6 @@
+         new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.8 })
+       );
+       pad.position.y = 0.08;
+-      pad.receiveShadow = true;
+-      pad.castShadow = true;
+       group.add(pad);
+ 
+       const rim = new THREE.Mesh(
+@@ -493,26 +486,21 @@
+     {
+       const mainBldg = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.45, 1.15), matPaperLight);
+       mainBldg.position.set(0, 0.88, 0);
+-      mainBldg.castShadow = true;
+-      mainBldg.receiveShadow = true;
+       buyerGroup.add(mainBldg);
+ 
+       const sideWing = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.95, 0.95), matPaperMid);
+       sideWing.position.set(-0.85, 0.63, -0.05);
+-      sideWing.castShadow = true;
+       buyerGroup.add(sideWing);
+ 
+       const roof = new THREE.Mesh(new THREE.ConeGeometry(1.18, 0.65, 4), matPaperDark);
+       roof.position.set(0, 1.93, 0);
+       roof.rotation.y = Math.PI / 4;
+-      roof.castShadow = true;
+       buyerGroup.add(roof);
+ 
+       const door = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.52, 0.06), matInk);
+       door.position.set(0, 0.42, 0.58);
+       buyerGroup.add(door);
+ 
+-      // Windows in ink tones
+       for (const wx of [-0.38, 0.38]) {
+         for (const wy of [0.85, 1.28]) {
+           const win = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.06), matInk);
+@@ -527,19 +515,16 @@
+     {
+       const desk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.85), matPaperMid);
+       desk.position.set(0, 0.51, 0);
+-      desk.castShadow = true;
+       agentGroup.add(desk);
+ 
+       const monitorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.82, 0.22), matPaperLight);
+       monitorFrame.position.set(0, 1.38, 0);
+-      monitorFrame.castShadow = true;
+       agentGroup.add(monitorFrame);
+ 
+       const screen = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.62, 0.06), matInk);
+       screen.position.set(0, 1.38, 0.11);
+       agentGroup.add(screen);
+ 
+-      // Yellow message accent bars on agent terminal screen
+       for (let i = 0; i < 3; i++) {
+         const bar = new THREE.Mesh(
+           new THREE.BoxGeometry(0.58 - i * 0.1, 0.075, 0.04),
+@@ -549,7 +534,6 @@
+         agentGroup.add(bar);
+       }
+ 
+-      // Antenna with yellow beacon
+       const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.38, 12), matInk);
+       stem.position.set(0, 1.98, 0);
+       agentGroup.add(stem);
+@@ -570,20 +554,16 @@
+     {
+       const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.85, 0.36), matPaperMid);
+       leftPillar.position.set(-0.62, 1.08, 0);
+-      leftPillar.castShadow = true;
+       spendGroup.add(leftPillar);
+ 
+       const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.85, 0.36), matPaperMid);
+       rightPillar.position.set(0.62, 1.08, 0);
+-      rightPillar.castShadow = true;
+       spendGroup.add(rightPillar);
+ 
+       const headerArch = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.34, 0.44), matInk);
+       headerArch.position.set(0, 2.08, 0);
+-      headerArch.castShadow = true;
+       spendGroup.add(headerArch);
+ 
+-      // Checkpoint barrier arm
+       spendGateArm = new THREE.Group();
+       spendGateArm.position.set(-0.48, 1.15, 0.18);
+       const armBar = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.12, 0.08), matPaperLight);
+@@ -606,36 +586,26 @@
+     let vaultKeyMat;
+     let vaultSealRing;
+     {
+-      // Back wall of blue vault box
+       const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.62, 1.62, 0.16), matBlueVault);
+       backWall.position.set(0, 0.98, -0.52);
+-      backWall.castShadow = true;
+       vaultGroup.add(backWall);
+ 
+-      // Bottom floor of vault
+       const floorWall = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.16, 1.2), matBlueVault);
+       floorWall.position.set(0, 0.24, 0);
+       vaultGroup.add(floorWall);
+ 
+-      // Top roof of vault
+       const roofWall = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.18, 1.2), matBlueVault);
+       roofWall.position.set(0, 1.72, 0);
+-      roofWall.castShadow = true;
+       vaultGroup.add(roofWall);
+ 
+-      // Left wall of vault
+       const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.62, 1.2), matBlueVault);
+       leftWall.position.set(-0.72, 0.98, 0);
+-      leftWall.castShadow = true;
+       vaultGroup.add(leftWall);
+ 
+-      // Right wall of vault
+       const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.62, 1.2), matBlueVault);
+       rightWall.position.set(0.72, 0.98, 0);
+-      rightWall.castShadow = true;
+       vaultGroup.add(rightWall);
+ 
+-      // Blue frame bezel on front so inside is clearly visible
+       const frontGlass = new THREE.Mesh(
+         new THREE.BoxGeometry(1.28, 1.32, 0.04),
+         new THREE.MeshStandardMaterial({
+@@ -660,18 +630,15 @@
+         metalness: 0.3
+       });
+ 
+-      // Key bow (ring)
+       const keyBow = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.06, 16, 32), vaultKeyMat);
+       keyBow.position.set(-0.28, 0, 0);
+       keyGroup.add(keyBow);
+ 
+-      // Key shaft
+       const keyShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.62, 16), vaultKeyMat);
+       keyShaft.rotation.z = Math.PI / 2;
+       keyShaft.position.set(0.18, 0, 0);
+       keyGroup.add(keyShaft);
+ 
+-      // Key teeth
+       const tooth1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.06), vaultKeyMat);
+       tooth1.position.set(0.28, -0.11, 0);
+       keyGroup.add(tooth1);
+@@ -682,7 +649,6 @@
+ 
+       vaultGroup.add(keyGroup);
+ 
+-      // Blue seal aura ring around vault roof
+       vaultSealRing = new THREE.Mesh(
+         new THREE.TorusGeometry(0.95, 0.055, 16, 48),
+         matBlueSeal
+@@ -716,17 +682,13 @@
+ 
+       const storeBody = new THREE.Mesh(new THREE.BoxGeometry(1.58, 1.38, 1.15), merchantBodyMat);
+       storeBody.position.set(0, 0.85, 0);
+-      storeBody.castShadow = true;
+-      storeBody.receiveShadow = true;
+       merchantGroup.add(storeBody);
+ 
+-      // Awning
+       const awning = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.22, 0.42), merchantSignMat);
+       awning.position.set(0, 1.36, 0.62);
+       awning.rotation.x = 0.25;
+       merchantGroup.add(awning);
+ 
+-      // Storefront windows (dark until paid)
+       const leftWin = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.58, 0.06), merchantWindowMat);
+       leftWin.position.set(-0.36, 0.78, 0.57);
+       merchantGroup.add(leftWin);
+@@ -735,7 +697,6 @@
+       rightWin.position.set(0.36, 0.78, 0.57);
+       merchantGroup.add(rightWin);
+ 
+-      // Roof signboard
+       const signBoard = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.3, 0.14), merchantSignMat);
+       signBoard.position.set(0, 1.69, 0.25);
+       merchantGroup.add(signBoard);
+@@ -776,13 +737,11 @@
+       rail.position.set(0, 0.21, 0);
+       chainGroup.add(rail);
+ 
+-      // 3 initial static red linked blocks at [-0.72, -0.24, +0.24], leaving +0.72 for appended block
+       const blockXPositions = [-0.72, -0.24, 0.24];
+       for (let i = 0; i < blockXPositions.length; i++) {
+         const bx = blockXPositions[i];
+         const blk = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.34, 0.34), matRedChain);
+         blk.position.set(bx, 0.52, 0);
+-        blk.castShadow = true;
+         chainGroup.add(blk);
+ 
+         const wireframe = new THREE.LineSegments(
+@@ -800,7 +759,6 @@
+         }
+       }
+ 
+-      // Appended 4th red block (ledger:<orderId>), hidden until settled ledger cue
+       appendedLedgerBlockGroup = new THREE.Group();
+       appendedLedgerBlockGroup.position.set(0.72, 0.52, 0);
+       appendedLedgerBlockGroup.visible = false;
+@@ -817,7 +775,6 @@
+         roughness: 0.25
+       });
+       const newBlk = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), newBlkMat);
+-      newBlk.castShadow = true;
+       appendedLedgerBlockGroup.add(newBlk);
+ 
+       const newEdges = new THREE.LineSegments(
+@@ -846,7 +803,6 @@
+     packetGroup.visible = false;
+     {
+       const envBody = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.38, 0.14), matYellow);
+-      envBody.castShadow = true;
+       packetGroup.add(envBody);
+ 
+       const envFlap = new THREE.Mesh(
+@@ -858,7 +814,6 @@
+       envFlap.position.set(0, 0.08, 0.05);
+       packetGroup.add(envFlap);
+ 
+-      // Blue seal badge on packet when vault seals it
+       const packetBlueSeal = new THREE.Mesh(
+         new THREE.CylinderGeometry(0.14, 0.14, 0.18, 24),
+         matBlueSeal
+@@ -920,7 +875,6 @@
+       });
+       const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.12, 32), coinMat);
+       disc.rotation.x = Math.PI / 2;
+-      disc.castShadow = true;
+       coinGroup.add(disc);
+ 
+       const rim = new THREE.Mesh(
+@@ -979,8 +933,12 @@
+ 
+     function projectToScreen(pos3D, el) {
+       const v = pos3D.clone().project(camera);
+-      const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+-      const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
++      let x = (v.x * 0.5 + 0.5) * window.innerWidth;
++      let y = (-v.y * 0.5 + 0.5) * window.innerHeight;
++      const halfW = (el.offsetWidth || 120) * 0.5;
++      const margin = 18;
++      x = Math.max(halfW + margin, Math.min(window.innerWidth - halfW - margin, x));
++      y = Math.max(64, Math.min(window.innerHeight - 115, y));
+       el.style.left = `${x}px`;
+       el.style.top = `${y}px`;
+     }
+@@ -995,7 +953,6 @@
+       return c * c * (3 - 2 * c);
+     }
+ 
+-    // Track state transitions so each milestone fires once
+     const flags = {
+       beat1Started: false,
+       beat1Refused: false,
+@@ -1015,12 +972,12 @@
+       camera.position.x = Math.sin(driftAngle) * 0.22;
+       camera.position.y = 6.3 + Math.cos(driftAngle * 0.8) * 0.08;
+       camera.lookAt(0, 0.45, 0);
++      camera.updateMatrixWorld();
+ 
+       // ---------------- BEAT 1: REFUSED ORDER ----------------
+       if (t >= T_BEAT1_START && !flags.beat1Started) {
+         flags.beat1Started = true;
+         internal.addMark('refused', ORD_REFUSED, 'refusal', t);
+-        internal.addElement(`packet:${ORD_REFUSED}`, t, ORD_REFUSED);
+ 
+         packetGroup.visible = true;
+         const sealMesh = packetGroup.getObjectByName('packetBlueSeal');
+@@ -1082,7 +1039,6 @@
+         packetGroup.visible = false;
+         refusalGroup.visible = false;
+         hideBadge(badgeRefusal);
+-        internal.removeElement(`packet:${ORD_REFUSED}`, t);
+         internal.removeElement(`refusal:${ORD_REFUSED}`, t);
+       }
+ 
+@@ -1090,7 +1046,6 @@
+       if (t >= T_BEAT2_START && !flags.beat2Started) {
+         flags.beat2Started = true;
+         internal.addMark('settled', ORD_SETTLED, 'coin', t);
+-        internal.addElement(`packet:${ORD_SETTLED}`, t, ORD_SETTLED);
+ 
+         packetGroup.visible = true;
+         const sealMesh = packetGroup.getObjectByName('packetBlueSeal');
+@@ -1140,7 +1095,6 @@
+         flags.beat2CoinStarted = true;
+         packetGroup.visible = false;
+         hideBadge(badgePacket);
+-        internal.removeElement(`packet:${ORD_SETTLED}`, t);
+ 
+         internal.addElement(`coin:${ORD_SETTLED}`, t, ORD_SETTLED);
+         coinGroup.visible = true;
+@@ -1159,7 +1113,7 @@
+           // Coin lands at Merchant (Chain is never the recipient of the coin)
+           coinGroup.position.set(X_POS.merchant, 1.35, 0.72);
+           coinGroup.rotation.y = Math.sin(t * 0.003) * 0.25;
+-          projectToScreen(new THREE.Vector3(X_POS.merchant, 2.05, 0.72), badgeCoin);
++          projectToScreen(new THREE.Vector3(X_POS.merchant, 2.95, 0.4), badgeCoin);
+ 
+           if (!flags.beat2MerchantLit) {
+             flags.beat2MerchantLit = true;
+@@ -1171,7 +1125,6 @@
+       // Separate ledger cue on Base Sepolia Chain: appended red block + pulse
+       if (t >= T_BEAT2_LEDGER && !flags.beat2LedgerAdded) {
+         flags.beat2LedgerAdded = true;
+-        internal.addElement(`ledger:${ORD_SETTLED}`, t, ORD_SETTLED);
+         appendedLedgerBlockGroup.visible = true;
+ 
+         showBadge(badgeSettled, `${AMT_SETTLED} · ${HASH_SETTLED}`, ORD_SETTLED, t);
+@@ -1190,7 +1143,7 @@
+         const ringScale = 1 + pulsePhase * 1.6;
+         ledgerPulseRing.scale.set(ringScale, ringScale, 1);
+         ledgerPulseRing.material.opacity = Math.max(0, 0.85 * (1 - pulsePhase));
+-        projectToScreen(new THREE.Vector3(X_POS.chain, 2.35, 0.25), badgeSettled);
++        projectToScreen(new THREE.Vector3(X_POS.chain, 1.55, 0.25), badgeSettled);
+       }
+ 
+       // Project static station labels
+@@ -1212,6 +1165,10 @@
+       requestAnimationFrame(animate);
+     }
+ 
++    // Immediate synchronous render at t=0 so all 6 stations and labels are visible on Frame 0
++    updateTimeline();
++    renderer.render(scene, camera);
++
+     // Background timer backup so marks/done advance reliably even if rAF is throttled
+     setInterval(updateTimeline, 100);
+ 
+@@ -1219,6 +1176,8 @@
+       camera.aspect = window.innerWidth / window.innerHeight;
+       camera.updateProjectionMatrix();
+       renderer.setSize(window.innerWidth, window.innerHeight);
++      updateTimeline();
++      renderer.render(scene, camera);
+     });
+ 
+     requestAnimationFrame(animate);

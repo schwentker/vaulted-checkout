@@ -1,0 +1,38 @@
+{
+  "scores": {
+    "legibility": 6,
+    "sequence": 8,
+    "beat_discipline": 8,
+    "style": 9,
+    "truth_visual": 9
+  },
+  "issues": [
+    {
+      "at_seconds": 0,
+      "severity": "high",
+      "rule": "Stage: Six stations, laid out left to right, visible from t=0 as quiet static shapes",
+      "saw": "From 0s to 3s the 3D stage is completely empty except for a stray clipped label fragment ('n Ledger') in the top-left corner; the six stations only appear at 4s.",
+      "expected": "All six stations and their static labels must be rendered and visible in place from t=0 without stray unpositioned DOM overlays in the top-left corner.",
+      "fix": "Initialize the scene, camera, stations, and first render pass immediately at t=0, and hide or properly position dynamic overlay labels until they are attached to a valid 3D projection."
+    },
+    {
+      "at_seconds": 6,
+      "severity": "high",
+      "rule": "Scene contract: Bind payment things to their order",
+      "saw": "Deterministic checks report 3 render_failures for unbound_element_event (elements at indices 6, 8, 10 in snapshot().elements).",
+      "expected": "Every non-station element recorded in snapshot().elements must be bound to an orderId via naming (`packet:<orderId>`, `refusal:<orderId>`, `coin:<orderId>`, `ledger:<orderId>`) or an explicit `orderId` property.",
+      "fix": "Ensure every dynamic element pushed to `snapshot().elements` includes the event's `orderId` property and uses one of the allowed bound prefixes (`packet:`, `refusal:`, `coin:`, `ledger:`, `settled:`), or omit purely decorative sub-meshes (like seals/glows) from `snapshot().elements`."
+    },
+    {
+      "at_seconds": 25,
+      "severity": "medium",
+      "rule": "legibility: Read labels and captions at 1280x720 without zooming. Check size, contrast, overlap, and time on screen.",
+      "saw": "At 25s–37s, the coin label ('1.5 USDC ord_99b70e93...') and the ledger label ('1.5 USDC · 0xd026fed3 ord_99b70e93...') overlap each other, and the ledger label is clipped off the right edge of the 1280x720 viewport.",
+      "expected": "All labels must remain fully inside the 1280x720 frame without overlapping each other.",
+      "fix": "Clamp label horizontal screen positions to stay within viewport margins (e.g. `Math.min(window.innerWidth - width/2 - 16, x)`), and stagger vertical offsets for the merchant coin label vs. the chain ledger label so they do not collide."
+    }
+  ],
+  "verdict": "revise",
+  "retried": false,
+  "response_sha256": "77f663d2811341f78acbe68134aea66519dc0cae08d11bda144dd5afb87ce61c"
+}

@@ -1,0 +1,53 @@
+{
+  "run": "/Users/andres/dev/vaulted-checkout-theater/theater/runs/r1",
+  "model_judged_label": "model-judged, same model family as the generator",
+  "rows": [
+    {
+      "iteration": 0,
+      "contradictions": 0,
+      "order_errors": 0,
+      "amount_errors": 0,
+      "render_failures": 3,
+      "total_bad": 3,
+      "model_judged": {
+        "legibility": 6,
+        "sequence": 8,
+        "beat_discipline": 8,
+        "style": 9,
+        "truth_visual": 9
+      },
+      "verdict": "revise",
+      "issue_count": 3,
+      "still": "0/frame-4.png",
+      "video": "0/render.webm"
+    },
+    {
+      "iteration": 1,
+      "contradictions": 0,
+      "order_errors": 0,
+      "amount_errors": 0,
+      "render_failures": 0,
+      "total_bad": 0,
+      "model_judged": {
+        "legibility": 9,
+        "sequence": 9,
+        "beat_discipline": 9,
+        "style": 10,
+        "truth_visual": 10
+      },
+      "verdict": "pass",
+      "issue_count": 2,
+      "still": "1/frame-4.png",
+      "video": "1/render.webm"
+    }
+  ],
+  "first_vs_last": {
+    "first": 0,
+    "last": 1,
+    "first_total_bad": 3,
+    "last_total_bad": 0
+  },
+  "regressions": [],
+  "stopped_early": true,
+  "summary": "Frozen checks improved from iteration 0 to the last: total_bad 3 -> 0. Stopped early at iteration 1: critic verdict pass and total_bad 0."
+}

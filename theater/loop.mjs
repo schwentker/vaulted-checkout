@@ -52,6 +52,18 @@ export async function runLoop({ eventsPath, iterations = 3, mode, out, root = RO
   try {
     for (let i = 0; i <= iterations; i++) {
       const dir = join(out, String(i)), scene = join(dir, 'scene.html');
+      // Resume guard: saved checks and critiques are reused only when every input is byte-identical.
+      const inputs = { events_sha256: sha256(events), spec_sha256: sha256(spec), rubric_sha256: sha256(rubric), scene_sha256: await sha256File(scene) };
+      if (await exists(join(dir, 'inputs.json'))) {
+        const saved = JSON.parse(await readFile(join(dir, 'inputs.json'), 'utf8'));
+        if (Object.keys(inputs).some(k => saved[k] !== inputs[k])) {
+          log(`loop: [${i}] saved results were made from different inputs (events, spec, rubric or scene changed). Use a new --out folder instead of resuming.`);
+          return 1;
+        }
+      } else if (await exists(join(dir, 'checks.json'))) {
+        log(`loop: [${i}] ${dir} has results but no inputs.json, so it cannot be resumed safely. Use a new --out folder.`);
+        return 1;
+      } else await writeFile(join(dir, 'inputs.json'), JSON.stringify(inputs, null, 2) + '\n');
       // Render + frozen checks.
       if (!await exists(join(dir, 'checks.json'))) {
         log(`loop: [${i}] rendering (real time, 30 to 45 s)`);

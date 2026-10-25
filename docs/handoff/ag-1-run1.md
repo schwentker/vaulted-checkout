@@ -14,12 +14,18 @@ Source: theater/iterations/scoreboard.json, results.json. All three iterations k
 
 Loop stopped early at iteration 2 (pass and total_bad 0). Timings: generate 437 s, repair 210 s and over 330 s. beat_discipline went 8 to 6 at iteration 1 (a model-judged regression; keep it in the story).
 
-Caveat that must travel with these numbers: the spec changed twice while iteration 0 was being built. theater/manifest.json records iteration0.spec_sha256 7933261f..., the mid-edit spec that told the model to record the chain block as an element named `ledger:<orderId>`. The frozen checker has no such role, so both of iteration 0's failures (and iteration 1's one) are `unbound_element_event` caused by that spec line, not by the model ignoring the contract. The final spec (24153670...) says to record the ledger cue as a label only. The critic and repairer used the final spec. So run 1 is a valid but exploratory run with a spec defect; label it "run 1, spec v1".
+Caveat that must travel with these numbers (corrected after Codex's CX-2 theater review, c865b49; my first explanation here was wrong):
+
+- Three spec versions existed. v0 (original, coin merchant to chain, no ledger text): sha 7933261f..., used to BUILD iteration 0 of run 1. v1 (my first Codex-note edit, told the model to record the chain block as an element named `ledger:<orderId>`): sha 24153670..., used by the critic and repairer in run 1, and, because the corrected file never reached Robert's disk (a file-copy lag on my side), also to build iteration 0 of run r1. v2 (final, ledger cue as a label only): sha ec8ea965..., on disk since 21:5x UTC.
+- So run 1's iteration 0 failures are NOT explained by the ledger line (that spec did not contain it). Codex found they concern packet elements; the ledger-named failure appears in a later iteration. The `unbound_element_event` failures are the model's own unbound moving elements, plus, from iteration 1 on, the v1 instruction.
+- Run 1 and run r1 are both exploratory: label them "spec v0/v1" and "spec v1". Neither is a clean measured run. r1 result: total_bad 3 -> 0, stopped early at iteration 1 (critic pass).
+- Zero checker errors does not prove completeness: Codex found the final scene omits some visible objects from its reported snapshot, and the evaluator trusts scene telemetry (theater/eval/README.md). Say "checked against the recorded payment log through scene telemetry", and rely on the video critique and a human look for what telemetry misses.
+- Loop bug found by Codex, fixed after run r1: resuming a run could reuse saved checks and critiques after the events changed. Each iteration folder now stores inputs.json (sha256 of events, spec, rubric, scene) and the loop refuses to resume on any mismatch. Test added (8 loop tests green).
 
 ## Revised plan
 
 1. Commit code, then run 1 evidence (below).
-2. Archive run 1 into theater/runs/run1-spec-v1/ so the next build starts clean.
+2. Archive run 1 (done: theater/runs/run1-spec-v1/) and r1 (theater/runs/r1 with its manifest) before the next build.
 3. When Gate D produces runs/latest/events.jsonl (main repo), copy it into this worktree (for example fixtures/events-gate-d.jsonl). Build iteration 0 from it with the final spec, then run the loop up to three times, each with `--out theater/runs/rN`.
 4. Optional `--min-rounds N` so every run does at least two repair rounds (not built; ask).
 5. AG-3 report: run 1 is shown as the spec-v1 run, measured runs as AG-2. Never best-of.

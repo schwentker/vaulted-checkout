@@ -1,0 +1,24 @@
+{
+  "contradictions": 0,
+  "order_errors": 0,
+  "amount_errors": 0,
+  "render_failures": 3,
+  "total_bad": 3,
+  "issues": [
+    {
+      "category": "render_failures",
+      "code": "unbound_element_event",
+      "index": 6
+    },
+    {
+      "category": "render_failures",
+      "code": "unbound_element_event",
+      "index": 8
+    },
+    {
+      "category": "render_failures",
+      "code": "unbound_element_event",
+      "index": 10
+    }
+  ]
+}

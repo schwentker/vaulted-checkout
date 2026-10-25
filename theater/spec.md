@@ -60,8 +60,12 @@ Camera: fixed or slow drift; every station stays in frame at 1280x720.
   pulse, no coin entering it. Label: `<amount> USDC` and the first 10
   characters of txHash including 0x (for example `0xd026fed3`). Merchant
   lights up. Caption: "Settled on Base Sepolia: <amount> USDC, receipt
-  <first 10 of txHash>". The coin element is the payment; the appended block
-  is the ledger inclusion, recorded as an element named `ledger:<orderId>`.
+  <first 10 of txHash>". The coin element is the payment (`coin:<orderId>`). The appended block is
+  part of the static chain station: draw it, but do not add a separate
+  snapshot element for it (the evaluator fails any unbound non-station
+  element). Record the ledger cue as a label only, containing the orderId and
+  the receipt, for example `<orderId> recorded on the ledger <first 10 of txHash>`,
+  at or after the coin's time.
 - `pay_requested`, `order_created`, `list`, `pending`: a yellow packet or
   message card at the acting station with a plain caption. `pending` never
   shows a coin or the word settled or paid.
@@ -102,7 +106,7 @@ sentence) so the evaluator can bind it.
   - `marks`: push exactly one `{t, kind, orderId, element}` per event at the
     moment that event becomes visible. `t` is replay milliseconds since the
     replay started. `kind` and `orderId` copy the event. `element` is the role
-    that appeared: `packet`, `coin`, `refusal`, `settled`, `ledger`, `agent`, `spend`,
+    that appeared: `packet`, `coin`, `refusal`, `settled`, `agent`, `spend`,
     `vault`, `merchant`, `chain`.
   - `snapshot()` returns a cumulative history `{labels:[{text,t,orderId?}],
     elements:[{name,visibleFrom,visibleTo,orderId?}]}` of everything ever shown,

@@ -180,3 +180,18 @@ test('api transport: Interactions wire shape, thinking levels, inline video, key
     }
   } finally { await server.close(); }
 });
+
+test('resume refuses saved results made from different inputs', async () => {
+  const dir = await theaterDir(), tmp = await mkdtemp(join(tmpdir(), 'ag1-ev-'));
+  const eventsCopy = join(tmp, 'events.jsonl');
+  await copyFile(EVENTS, eventsCopy);
+  const { model } = modelWith(dir, { generate: [htmlAnswer(FIXED)], critique: [critiqueAnswer('pass')] });
+  await buildScene({ eventsPath: eventsCopy, theaterDir: dir, model, log: quiet });
+  assert.equal(await runLoop({ eventsPath: eventsCopy, iterations: 1, mode: 'api', theaterDir: dir, model, capture, log: quiet }), 0);
+  assert.ok(await exists(join(dir, 'iterations/0/inputs.json')));
+  // Same inputs: resuming is fine and calls no model (no canned responses left).
+  assert.equal(await runLoop({ eventsPath: eventsCopy, iterations: 1, mode: 'api', theaterDir: dir, model, capture, log: quiet }), 0);
+  // Changed amount in the events: saved checks must not be reused.
+  await writeFile(eventsCopy, (await readFile(EVENTS, 'utf8')).replace('"1.5"', '"2.5"'));
+  assert.equal(await runLoop({ eventsPath: eventsCopy, iterations: 1, mode: 'api', theaterDir: dir, model, capture, log: quiet }), 1);
+});

@@ -1,0 +1,30 @@
+{
+  "scores": {
+    "legibility": 9,
+    "sequence": 9,
+    "beat_discipline": 9,
+    "style": 10,
+    "truth_visual": 10
+  },
+  "issues": [
+    {
+      "at_seconds": 19,
+      "severity": "low",
+      "rule": "beat_discipline / truth_visual",
+      "saw": "During the vault sealing phase (19s) and coin transfer (20s-24s) of the settled order, the bottom caption still reads 'Gemini agent asked for 1.5 USDC payment' before updating to 'Settled on Base Sepolia...' at 25s.",
+      "expected": "Captions and stage beats can stay tightly synchronized as the packet is sealed by the vault and the buyer sends the coin.",
+      "fix": "Optional polish: keep or slightly tighten the transition between the vault seal, coin flight, and the settled caption, though the current sub-step sequence is already clear and accurate."
+    },
+    {
+      "at_seconds": 25,
+      "severity": "low",
+      "rule": "legibility",
+      "saw": "At 25s, the orderId token pill in the bottom caption bar wraps onto a second line ('ord_99b70e93-7b65-4edd-a97f-' on line 1, '8464c86f2b0d' on line 2) because the main caption text is long.",
+      "expected": "The orderId badge should ideally stay on a single line without awkward mid-UUID wrapping.",
+      "fix": "Add `white-space: nowrap` to the orderId pill span in the caption bar and allow flex-wrap on the container or slightly reduce the pill font-size so the UUID stays intact on one line."
+    }
+  ],
+  "verdict": "pass",
+  "retried": false,
+  "response_sha256": "fea3560ac1216e357514078afb580057247523fa625f4f7e6015510c2b2f4d28"
+}
