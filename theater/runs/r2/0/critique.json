@@ -1,0 +1,54 @@
+{
+  "scores": {
+    "legibility": 6,
+    "sequence": 8,
+    "beat_discipline": 7,
+    "style": 9,
+    "truth_visual": 8
+  },
+  "issues": [
+    {
+      "at_seconds": 0,
+      "severity": "high",
+      "rule": "Stage: Six stations, laid out left to right, visible from t=0 as quiet static shapes",
+      "saw": "At 00:00 the canvas is completely blank paper; the six stations only appear around 00:01.",
+      "expected": "All six stations must be rendered and visible immediately at t=0 before the first animation frame completes.",
+      "fix": "Initialize the scene, camera, renderer, and station meshes synchronously and call renderer.render(scene, camera) immediately upon setup at t=0."
+    },
+    {
+      "at_seconds": 1,
+      "severity": "high",
+      "rule": "Scene contract: Bind payment things to their order: name moving objects coin:<orderId>, refusal:<orderId>, packet:<orderId>, or add an explicit orderId field (checks.json: unbound_element_event at indices 6 and 8)",
+      "saw": "Deterministic evaluator reported 2 render_failures with code unbound_element_event at snapshot().elements indices 6 and 8.",
+      "expected": "Every non-station element in snapshot().elements must only use allowed role prefixes (packet:<orderId>, refusal:<orderId>, coin:<orderId>) and include the explicit orderId property matching an event in events.jsonl, with no unbound auxiliary elements (such as separate seal or block objects).",
+      "fix": "Ensure every dynamic element recorded in snapshot().elements is named strictly packet:<orderId>, refusal:<orderId>, or coin:<orderId> with orderId set on the entry, and do not push separate snapshot elements for vault seals or appended chain blocks."
+    },
+    {
+      "at_seconds": 13,
+      "severity": "medium",
+      "rule": "Caption bar: one plain sentence per beat; Beat discipline",
+      "saw": "From 00:13 to 00:23, while the second order (ord_99b70e93...) packet travels and the red coin moves from buyer to merchant, the bottom caption bar continues displaying 'Vault refused the payment: rule_payto ord_429bfdbc...' from the first order.",
+      "expected": "The caption bar should clear or reflect the current beat so the refusal caption from the first order does not stay on screen during the second order's request and payment flow.",
+      "fix": "Update or clear the caption when the second order beat begins at 00:13, and show the settled caption cleanly for the second order."
+    },
+    {
+      "at_seconds": 17,
+      "severity": "medium",
+      "rule": "Legibility: Check size, contrast, overlap, and time on screen",
+      "saw": "At 00:17-00:18 the yellow packet label ('asked 1.5 USDC') and at 00:22 the red coin label ('1.5 USDC 0xd026fed3') directly overlap and occlude the vault's persistent 'refused rule_payto' label; the vault's blue seal also collides with the blue refusal cross badge.",
+      "expected": "Labels and vault badges should not collide or occlude one another during playback.",
+      "fix": "Offset the vertical height (Y position) of transient moving packet/coin labels above the persistent vault refusal label, and place the vault's blue seal badge separately from the refusal cross badge."
+    },
+    {
+      "at_seconds": 24,
+      "severity": "low",
+      "rule": "Legibility: Read labels and captions at 1280x720 without zooming; whole token orderId",
+      "saw": "At 00:24-00:34, the orderId token in the bottom caption wraps across two lines ('ord_99b70e93-7b65-4edd-a97f-' and '8464c86f2b0d'), and the orderId inside the chain's 'recorded on the ledger' callout is very small and wrapped across multiple lines.",
+      "expected": "OrderIds and labels should remain intact on a single line (white-space: nowrap) at a legible font size.",
+      "fix": "Add white-space: nowrap to the orderId badge in the caption bar and widen the chain label overlay with a slightly larger font size so the orderId stays readable on one line."
+    }
+  ],
+  "verdict": "revise",
+  "retried": false,
+  "response_sha256": "b324a048b72ce6a41c448f7c8be24ebe49f0a7aa616d041c61a56b41dab70185"
+}

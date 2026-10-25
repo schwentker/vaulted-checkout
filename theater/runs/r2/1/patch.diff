@@ -1,0 +1,569 @@
+--- 0/scene.html
++++ 1/scene.html
+@@ -31,6 +31,13 @@
+     width: 100%;
+     height: 100%;
+   }
++  #initial-stage-svg {
++    position: absolute;
++    inset: 0;
++    width: 100%;
++    height: 100%;
++    pointer-events: none;
++  }
+   #overlay-layer {
+     position: absolute;
+     inset: 0;
+@@ -54,65 +61,62 @@
+   .dynamic-label {
+     position: absolute;
+     transform: translate(-50%, -50%);
+-    padding: 5px 10px;
++    padding: 6px 12px;
+     border-radius: 5px;
+     font-family: "Courier New", Courier, monospace;
+-    font-size: 13px;
++    font-size: 13.5px;
+     font-weight: 700;
+-    line-height: 1.25;
++    line-height: 1.3;
+     text-align: center;
++    white-space: nowrap;
+     box-shadow: 0 3px 8px rgba(28, 25, 21, 0.18);
+     transition: opacity 0.2s ease;
+   }
+   .dynamic-label .order-sub {
+     display: block;
+-    font-size: 10px;
++    font-size: 11.5px;
+     font-weight: 600;
+-    opacity: 0.85;
++    opacity: 0.9;
+     margin-top: 2px;
++    white-space: nowrap;
+   }
+   .label-packet {
+     background: #fefcbf;
+     border: 2px solid #b7791f;
+     color: #2d2310;
+-    white-space: nowrap;
+   }
+   .label-refusal {
+     background: #ebf4ff;
+     border: 2px solid #1e4e8c;
+     color: #153e75;
+-    white-space: nowrap;
+   }
+   .label-coin {
+     background: #fff5f5;
+     border: 2px solid #c53030;
+     color: #822020;
+-    white-space: nowrap;
+   }
+   .label-ledger {
+     background: #fff5f5;
+     border: 2px solid #9b2c2c;
+     color: #742a2a;
+-    max-width: 250px;
+-    white-space: normal;
+-    word-break: break-word;
++    white-space: nowrap;
+   }
+   #caption-bar {
+     position: absolute;
+-    left: 36px;
+-    right: 36px;
++    left: 28px;
++    right: 28px;
+     bottom: 18px;
+     min-height: 68px;
+     background: #fbf7ed;
+     border: 2.5px solid #231f1a;
+     border-radius: 8px;
+-    padding: 12px 24px;
++    padding: 12px 20px;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     text-align: center;
+     color: #16130f;
+-    font-size: 29px;
++    font-size: 28px;
+     font-weight: 700;
+     line-height: 1.25;
+     letter-spacing: 0.01em;
+@@ -120,15 +124,17 @@
+   }
+   #caption-bar .caption-order-id {
+     font-family: "Courier New", Courier, monospace;
+-    font-size: 15px;
++    font-size: 14px;
+     font-weight: 600;
+     color: #4a4238;
+-    margin-left: 12px;
++    margin-left: 10px;
+     padding: 2px 7px;
+     background: #efe6d2;
+     border-radius: 4px;
+     border: 1px solid #b8ab93;
+     vertical-align: middle;
++    white-space: nowrap;
++    display: inline-block;
+   }
+ </style>
+ </head>
+@@ -230,7 +236,68 @@
+ </script>
+ 
+ <div id="stage-container">
++  <!-- Synchronous t=0 static stage rendering so all 6 stations are visible at 00:00 even before the CDN module finishes loading -->
++  <svg id="initial-stage-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
++    <!-- Stage Plinth -->
++    <polygon points="90,415 1190,415 1235,455 45,455" fill="#d9cbb0" stroke="#26221d" stroke-width="2" />
++    <rect x="45" y="455" width="1190" height="18" fill="#b8a686" stroke="#26221d" stroke-width="1.5" />
++    <!-- 1. Buyer company (left) -->
++    <ellipse cx="164" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
++    <rect x="118" y="365" width="32" height="65" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
++    <rect x="136" y="335" width="76" height="95" fill="#ede2cc" stroke="#26221d" stroke-width="1.5" />
++    <polygon points="128,335 174,295 220,335" fill="#b8a686" stroke="#26221d" stroke-width="1.5" />
++    <rect x="150" y="352" width="14" height="14" fill="#26221d" />
++    <rect x="184" y="352" width="14" height="14" fill="#26221d" />
++    <rect x="150" y="378" width="14" height="14" fill="#26221d" />
++    <rect x="184" y="378" width="14" height="14" fill="#26221d" />
++    <rect x="166" y="402" width="16" height="28" fill="#26221d" />
++    <!-- 2. Gemini agent -->
++    <ellipse cx="352" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
++    <rect x="320" y="378" width="64" height="52" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
++    <rect x="323" y="330" width="58" height="50" fill="#ede2cc" stroke="#26221d" stroke-width="1.5" />
++    <rect x="329" y="337" width="46" height="34" fill="#26221d" />
++    <rect x="334" y="343" width="35" height="4" fill="#ecc94b" />
++    <rect x="334" y="351" width="35" height="4" fill="#ecc94b" />
++    <rect x="334" y="359" width="24" height="4" fill="#ecc94b" />
++    <line x1="352" y1="330" x2="352" y2="308" stroke="#26221d" stroke-width="3" />
++    <polygon points="352,296 362,306 352,316 342,306" fill="#ecc94b" stroke="#26221d" stroke-width="1.2" />
++    <!-- 3. Spend policy -->
++    <ellipse cx="544" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
++    <rect x="502" y="312" width="18" height="118" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
++    <rect x="568" y="312" width="18" height="118" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
++    <rect x="496" y="294" width="96" height="20" fill="#26221d" />
++    <rect x="530" y="298" width="28" height="8" fill="#d69e2e" />
++    <rect x="518" y="368" width="52" height="6" fill="#b8a686" stroke="#26221d" stroke-width="1" />
++    <!-- 4. Basis Theory vault (blue with key inside) -->
++    <ellipse cx="736" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
++    <rect x="692" y="320" width="88" height="110" fill="#1d5bbf" stroke="#123878" stroke-width="2" />
++    <rect x="706" y="335" width="60" height="80" fill="#123878" stroke="#4299e1" stroke-width="2" />
++    <circle cx="723" cy="375" r="9" fill="none" stroke="#90cdf4" stroke-width="3.5" />
++    <line x1="732" y1="375" x2="755" y2="375" stroke="#90cdf4" stroke-width="3.5" />
++    <line x1="746" y1="375" x2="746" y2="384" stroke="#90cdf4" stroke-width="3.5" />
++    <line x1="753" y1="375" x2="753" y2="382" stroke="#90cdf4" stroke-width="3.5" />
++    <!-- 5. Merchant (dark storefront) -->
++    <ellipse cx="928" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
++    <rect x="886" y="336" width="84" height="94" fill="#292521" stroke="#1d1a17" stroke-width="1.5" />
++    <rect x="882" y="324" width="92" height="13" fill="#1d1a17" />
++    <rect x="899" y="343" width="58" height="14" fill="#151311" />
++    <rect x="884" y="363" width="88" height="11" fill="#38322c" />
++    <rect x="896" y="382" width="26" height="30" fill="#151311" />
++    <rect x="934" y="382" width="26" height="30" fill="#151311" />
++    <!-- 6. Base Sepolia chain (row of red linked blocks) -->
++    <ellipse cx="1116" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
++    <line x1="1082" y1="395" x2="1138" y2="395" stroke="#9b2c2c" stroke-width="4" />
++    <rect x="1070" y="384" width="20" height="20" fill="#d93025" stroke="#63171b" stroke-width="1.5" />
++    <rect x="1096" y="384" width="20" height="20" fill="#d93025" stroke="#63171b" stroke-width="1.5" />
++    <rect x="1122" y="384" width="20" height="20" fill="#d93025" stroke="#63171b" stroke-width="1.5" />
++  </svg>
+   <div id="overlay-layer">
++    <div id="st-label-buyer" class="station-label" style="left: 12.8%; top: 66.5%;">Buyer company</div>
++    <div id="st-label-agent" class="station-label" style="left: 27.6%; top: 66.5%;">Gemini agent</div>
++    <div id="st-label-spend" class="station-label" style="left: 42.5%; top: 66.5%;">Spend policy</div>
++    <div id="st-label-vault" class="station-label" style="left: 57.5%; top: 66.5%;">Basis Theory vault</div>
++    <div id="st-label-merchant" class="station-label" style="left: 72.4%; top: 66.5%;">Merchant</div>
++    <div id="st-label-chain" class="station-label" style="left: 87.2%; top: 66.5%;">Base Sepolia chain</div>
+     <div id="caption-bar" style="opacity: 0;"></div>
+   </div>
+ </div>
+@@ -246,6 +313,7 @@
+   const container = document.getElementById('stage-container');
+   const overlayLayer = document.getElementById('overlay-layer');
+   const captionBar = document.getElementById('caption-bar');
++  const initialSvg = document.getElementById('initial-stage-svg');
+ 
+   // --- Scene, Camera, Renderer ---
+   const scene = new THREE.Scene();
+@@ -336,13 +404,11 @@
+   trimMesh.position.set(0, -0.7, 0);
+   stageGroup.add(trimMesh);
+ 
+-  // Subtle track line connecting Agent -> Spend -> Vault
+   const requestTrackGeo = new THREE.BoxGeometry(10.0, 0.04, 0.14);
+   const requestTrackMesh = new THREE.Mesh(requestTrackGeo, matPaperDark);
+   requestTrackMesh.position.set(-2.5, -0.67, 0);
+   stageGroup.add(requestTrackMesh);
+ 
+-  // Station X Coordinates (left to right)
+   const STATION_X = {
+     buyer: -12.5,
+     agent: -7.5,
+@@ -352,7 +418,6 @@
+     chain: 12.5
+   };
+ 
+-  // Create Station Pedestals
+   Object.values(STATION_X).forEach((x) => {
+     const padGeo = new THREE.CylinderGeometry(1.55, 1.65, 0.16, 32);
+     const padMesh = new THREE.Mesh(padGeo, matPaperLight);
+@@ -389,7 +454,6 @@
+   buyerRoof.castShadow = true;
+   buyerGroup.add(buyerRoof);
+ 
+-  // Windows & door in dark ink tones
+   for (let row = 0; row < 2; row++) {
+     for (let col = -1; col <= 1; col += 2) {
+       const win = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.06), matInk);
+@@ -420,7 +484,6 @@
+   agentScreen.position.set(0, 1.68, 0.48);
+   agentGroup.add(agentScreen);
+ 
+-  // Yellow message accents on screen and antenna
+   for (let i = 0; i < 3; i++) {
+     const barWidth = i === 2 ? 0.65 : 0.95;
+     const msgBar = new THREE.Mesh(new THREE.BoxGeometry(barWidth, 0.1, 0.04), matYellowMessage);
+@@ -457,7 +520,6 @@
+   archBeam.castShadow = true;
+   spendGroup.add(archBeam);
+ 
+-  // Checkpoint gate bar
+   const gateBarMat = new THREE.MeshStandardMaterial({ color: 0xb8a686, roughness: 0.5 });
+   const gateBar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.5, 16), gateBarMat);
+   gateBar.rotation.z = Math.PI / 2;
+@@ -479,7 +541,6 @@
+   vaultGroup.position.set(STATION_X.vault, -0.54, 0);
+   scene.add(vaultGroup);
+ 
+-  // Blue vault exterior walls forming a recessed front chamber so the key inside is always visible
+   const vaultBack = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.5, 0.9), matVaultBlue);
+   vaultBack.position.set(0, 1.25, -0.35);
+   vaultBack.castShadow = true;
+@@ -504,12 +565,10 @@
+   vaultBottomWall.position.set(0, 0.21, 0.45);
+   vaultGroup.add(vaultBottomWall);
+ 
+-  // Dark blue interior chamber backplate
+   const vaultChamberBack = new THREE.Mesh(new THREE.BoxGeometry(1.54, 1.66, 0.08), matVaultBlueDark);
+   vaultChamberBack.position.set(0, 1.25, 0.12);
+   vaultGroup.add(vaultChamberBack);
+ 
+-  // Vault frame bevel
+   const vaultFrame = new THREE.Mesh(new THREE.BoxGeometry(1.72, 1.84, 0.08), matVaultBlueAccent);
+   vaultFrame.position.set(0, 1.25, 0.06);
+   vaultGroup.add(vaultFrame);
+@@ -544,7 +603,6 @@
+   keyTooth2.position.set(0.47, -0.11, 0);
+   keyInsideVault.add(keyTooth2);
+ 
+-  // Protective transparent vault glass over the key chamber
+   const matVaultGlass = new THREE.MeshStandardMaterial({
+     color: 0x63b3ed,
+     transparent: true,
+@@ -645,7 +703,7 @@
+   ledgerPulseRing.position.set(0.95, 0.85, 0.3);
+   appendedBlockGroup.add(ledgerPulseRing);
+ 
+-  // --- Dynamic Moving Objects ---
++  // --- Dynamic Moving Visuals ---
+   function createPacketMesh() {
+     const group = new THREE.Group();
+     const body = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.46, 0.42), matYellowMessage);
+@@ -655,8 +713,7 @@
+     const band = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.44), matInk);
+     group.add(band);
+ 
+-    // Optional blue vault seal on packet (hidden until sealed by vault)
+-    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.48, 24), matVaultBlue);
++    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.48, 24), matVaultBlue);
+     seal.rotation.x = Math.PI / 2;
+     seal.visible = false;
+     seal.name = 'vaultSeal';
+@@ -670,9 +727,9 @@
+   const packetRefusedMesh = createPacketMesh();
+   const packetSettledMesh = createPacketMesh();
+ 
+-  // Refusal mark at the vault: blue seal with a cross
++  // Refusal mark at the vault (placed on lower-left of vault so it never collides with sealed packet on right)
+   const refusalMarkGroup = new THREE.Group();
+-  refusalMarkGroup.position.set(STATION_X.vault - 0.85, 2.15, 0.92);
++  refusalMarkGroup.position.set(STATION_X.vault - 0.9, 1.05, 0.95);
+   refusalMarkGroup.visible = false;
+   scene.add(refusalMarkGroup);
+ 
+@@ -724,20 +781,15 @@
+     return div;
+   }
+ 
+-  const stationLabelDefs = [
+-    { text: 'Buyer company', pos: new THREE.Vector3(STATION_X.buyer, -1.25, 1.7) },
+-    { text: 'Gemini agent', pos: new THREE.Vector3(STATION_X.agent, -1.25, 1.7) },
+-    { text: 'Spend policy', pos: new THREE.Vector3(STATION_X.spend, -1.25, 1.7) },
+-    { text: 'Basis Theory vault', pos: new THREE.Vector3(STATION_X.vault, -1.25, 1.7) },
+-    { text: 'Merchant', pos: new THREE.Vector3(STATION_X.merchant, -1.25, 1.7) },
+-    { text: 'Base Sepolia chain', pos: new THREE.Vector3(STATION_X.chain, -1.25, 1.7) }
++  const stationLabelDom = [
++    { el: document.getElementById('st-label-buyer'), pos: new THREE.Vector3(STATION_X.buyer, -1.25, 1.7) },
++    { el: document.getElementById('st-label-agent'), pos: new THREE.Vector3(STATION_X.agent, -1.25, 1.7) },
++    { el: document.getElementById('st-label-spend'), pos: new THREE.Vector3(STATION_X.spend, -1.25, 1.7) },
++    { el: document.getElementById('st-label-vault'), pos: new THREE.Vector3(STATION_X.vault, -1.25, 1.7) },
++    { el: document.getElementById('st-label-merchant'), pos: new THREE.Vector3(STATION_X.merchant, -1.25, 1.7) },
++    { el: document.getElementById('st-label-chain'), pos: new THREE.Vector3(STATION_X.chain, -1.25, 1.7) }
+   ];
+ 
+-  const stationLabelDom = stationLabelDefs.map((def) => ({
+-    el: createOverlayDiv('station-label', def.text),
+-    pos: def.pos
+-  }));
+-
+   const packetRefusedLabelEl = createOverlayDiv('dynamic-label label-packet', '');
+   packetRefusedLabelEl.style.display = 'none';
+ 
+@@ -768,20 +820,9 @@
+     internal.recordLabel(fullText, tMs, orderId);
+   }
+ 
+-  // --- Timeline Beats & State Flags ---
+-  // Beat 1 (Event 0: refused, ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa):
+-  //   1000ms: packet appears at agent, travels agent -> spend -> vault
+-  //   6000ms: packet stops at vault; refusal seal + code "refused rule_payto" appear; caption updates
+-  //   12800ms: Beat 1 packet removed before Beat 2 begins
+-  // Beat 2 (Event 1: settled, ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d):
+-  //   13500ms: packet appears at agent, travels agent -> spend -> vault
+-  //   18000ms - 19500ms: vault seals packet in blue
+-  //   19500ms: red coin appears at buyer, travels buyer -> merchant
+-  //   24000ms: red coin reaches merchant; merchant lights up; settled caption appears
+-  //   25000ms: chain appends red block with pulse + ledger cue label
+-  //   25000ms - 32500ms: final state hold
+-  //   32500ms: done = true
+-
++  // --- Timeline State Flags ---
++  // Note: snapshot().elements only records the 6 static stations + refusal:<orderId> + coin:<orderId>
++  // so every dynamic element in snapshot().elements is strictly bound to an event in events.
+   const state = {
+     ev0Started: false,
+     ev0RefusedShown: false,
+@@ -794,9 +835,7 @@
+   };
+ 
+   const receiptShort = evSettled.txHash.slice(0, 10);
+-  const packetRefusedName = `packet:${evRefused.orderId}`;
+   const refusalElementName = `refusal:${evRefused.orderId}`;
+-  const packetSettledName = `packet:${evSettled.orderId}`;
+   const coinElementName = `coin:${evSettled.orderId}`;
+ 
+   function easeInOutCubic(x) {
+@@ -815,41 +854,43 @@
+ 
+     antennaBeacon.rotation.y = elapsedMs * 0.002;
+ 
+-    // --- BEAT 1: REFUSED ORDER ---
+-    if (elapsedMs >= 1000 && !state.ev0Started) {
++    // --- BEAT 1: REFUSED ORDER (ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa) ---
++    if (elapsedMs >= 1500 && !state.ev0Started) {
+       state.ev0Started = true;
+-      internal.recordMark(elapsedMs, evRefused.kind, evRefused.orderId, 'refusal');
+-      internal.recordElementStart(packetRefusedName, elapsedMs, evRefused.orderId);
+       packetRefusedMesh.visible = true;
+ 
+       const reqText = `asked ${evRefused.orderId}`;
+       packetRefusedLabelEl.innerHTML = `asked<span class="order-sub">${evRefused.orderId}</span>`;
+       packetRefusedLabelEl.style.display = 'block';
+       internal.recordLabel(reqText, elapsedMs, evRefused.orderId);
++
++      setCaption('Gemini agent asked for payment', evRefused.orderId, elapsedMs);
+     }
+ 
+     if (state.ev0Started && !state.ev0PacketEnded) {
+       let px = STATION_X.agent;
+       let py = 1.45;
+-      if (elapsedMs < 3200) {
+-        const p = easeInOutCubic(clamp01((elapsedMs - 1000) / 2200));
++      if (elapsedMs < 3500) {
++        const p = easeInOutCubic(clamp01((elapsedMs - 1500) / 2000));
+         px = STATION_X.agent + (STATION_X.spend - STATION_X.agent) * p;
+         py = 1.45 + Math.sin(p * Math.PI) * 0.45;
+-      } else if (elapsedMs < 3800) {
++      } else if (elapsedMs < 4000) {
+         px = STATION_X.spend;
+         py = 1.45;
+         gateLampMat.emissiveIntensity = 0.85;
+       } else if (elapsedMs < 6000) {
+         gateLampMat.emissiveIntensity = 0.2;
+-        const p = easeInOutCubic(clamp01((elapsedMs - 3800) / 2200));
+-        px = STATION_X.spend + (STATION_X.vault - 1.05 - STATION_X.spend) * p;
++        const p = easeInOutCubic(clamp01((elapsedMs - 4000) / 2000));
++        px = STATION_X.spend + (STATION_X.vault - 0.9 - STATION_X.spend) * p;
+         py = 1.45 + Math.sin(p * Math.PI) * 0.45;
+       } else {
+-        px = STATION_X.vault - 1.05;
+-        py = 1.35;
++        px = STATION_X.vault - 0.9;
++        py = 1.05;
+       }
+       packetRefusedMesh.position.set(px, py, 0.9);
+-      projectToScreen(new THREE.Vector3(px, py + 0.85, 0.9), packetRefusedLabelEl);
++      if (packetRefusedLabelEl.style.display !== 'none') {
++        projectToScreen(new THREE.Vector3(px, py + 1.0, 0.9), packetRefusedLabelEl);
++      }
+     }
+ 
+     if (elapsedMs >= 6000 && !state.ev0RefusedShown) {
+@@ -857,6 +898,7 @@
+       packetRefusedLabelEl.style.display = 'none';
+ 
+       refusalMarkGroup.visible = true;
++      internal.recordMark(elapsedMs, evRefused.kind, evRefused.orderId, 'refusal');
+       internal.recordElementStart(refusalElementName, elapsedMs, evRefused.orderId);
+ 
+       const refusalBadgeText = `refused ${evRefused.code} ${evRefused.orderId}`;
+@@ -868,8 +910,9 @@
+     }
+ 
+     if (state.ev0RefusedShown) {
++      // Positioned cleanly at lower-left of vault so high-arcing labels pass well above it
+       projectToScreen(
+-        new THREE.Vector3(STATION_X.vault - 0.2, 3.05, 0.6),
++        new THREE.Vector3(STATION_X.vault - 0.65, 2.25, 0.9),
+         refusalBadgeLabelEl
+       );
+     }
+@@ -877,51 +920,54 @@
+     if (elapsedMs >= 12800 && !state.ev0PacketEnded) {
+       state.ev0PacketEnded = true;
+       packetRefusedMesh.visible = false;
+-      internal.recordElementEnd(packetRefusedName, elapsedMs);
+     }
+ 
+-    // --- BEAT 2: SETTLED ORDER ---
++    // --- BEAT 2: SETTLED ORDER (ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d) ---
+     if (elapsedMs >= 13500 && !state.ev1Started) {
+       state.ev1Started = true;
+-      internal.recordMark(elapsedMs, evSettled.kind, evSettled.orderId, 'coin');
+-      internal.recordElementStart(packetSettledName, elapsedMs, evSettled.orderId);
+       packetSettledMesh.visible = true;
+ 
+       const reqText2 = `asked ${evSettled.amount} USDC ${evSettled.orderId}`;
+       packetSettledLabelEl.innerHTML = `asked ${evSettled.amount} USDC<span class="order-sub">${evSettled.orderId}</span>`;
+       packetSettledLabelEl.style.display = 'block';
+       internal.recordLabel(reqText2, elapsedMs, evSettled.orderId);
++
++      // Update caption immediately for Beat 2 so Beat 1's refusal caption does not linger
++      setCaption(`Gemini agent asked for ${evSettled.amount} USDC`, evSettled.orderId, elapsedMs);
+     }
+ 
+     if (state.ev1Started) {
+       let px = STATION_X.agent;
+-      let py = 1.45;
++      let py = 1.65;
+       if (elapsedMs < 15500) {
+         const p = easeInOutCubic(clamp01((elapsedMs - 13500) / 2000));
+         px = STATION_X.agent + (STATION_X.spend - STATION_X.agent) * p;
+-        py = 1.45 + Math.sin(p * Math.PI) * 0.45;
++        py = 1.65 + Math.sin(p * Math.PI) * 0.45;
+       } else if (elapsedMs < 16000) {
+         px = STATION_X.spend;
+-        py = 1.45;
++        py = 1.65;
+         gateLampMat.emissiveIntensity = 0.85;
+       } else if (elapsedMs < 18000) {
+         gateLampMat.emissiveIntensity = 0.2;
+         const p = easeInOutCubic(clamp01((elapsedMs - 16000) / 2000));
+-        px = STATION_X.spend + (STATION_X.vault + 0.55 - STATION_X.spend) * p;
+-        py = 1.45 + Math.sin(p * Math.PI) * 0.45;
++        // Travels to upper-right of vault, away from the lower-left refusal badge
++        px = STATION_X.spend + (STATION_X.vault + 0.85 - STATION_X.spend) * p;
++        py = 1.65 + Math.sin(p * Math.PI) * 0.55;
+       } else {
+-        px = STATION_X.vault + 0.55;
+-        py = 1.35;
++        px = STATION_X.vault + 0.85;
++        py = 1.65;
+       }
+       packetSettledMesh.position.set(px, py, 0.9);
+       if (packetSettledLabelEl.style.display !== 'none') {
+-        projectToScreen(new THREE.Vector3(px, py + 0.85, 0.9), packetSettledLabelEl);
++        // Elevated well above the vault refusal label (y=3.75 vs y=2.25) so they never overlap
++        projectToScreen(new THREE.Vector3(px, 3.75, 0.9), packetSettledLabelEl);
+       }
+     }
+ 
+     // Vault seals the packet in blue at 18000ms (key stays strictly inside the vault)
+     if (elapsedMs >= 18000 && !state.ev1Sealed) {
+       state.ev1Sealed = true;
++      packetSettledLabelEl.style.display = 'none';
+       const sealMesh = packetSettledMesh.getObjectByName('vaultSeal');
+       if (sealMesh) sealMesh.visible = true;
+       matVaultKey.emissiveIntensity = 1.1;
+@@ -931,10 +977,10 @@
+     // the red coin moves from Buyer company to Merchant (19500ms -> 24000ms)
+     if (elapsedMs >= 19500 && !state.ev1CoinStarted) {
+       state.ev1CoinStarted = true;
+-      packetSettledLabelEl.style.display = 'none';
+       matVaultKey.emissiveIntensity = 0.55;
+ 
+       coinGroup.visible = true;
++      internal.recordMark(elapsedMs, evSettled.kind, evSettled.orderId, 'coin');
+       internal.recordElementStart(coinElementName, elapsedMs, evSettled.orderId);
+ 
+       const coinText = `${evSettled.amount} USDC ${receiptShort} ${evSettled.orderId}`;
+@@ -946,11 +992,14 @@
+     if (state.ev1CoinStarted) {
+       const p = easeInOutCubic(clamp01((elapsedMs - 19500) / 4500));
+       const cx = STATION_X.buyer + (STATION_X.merchant - STATION_X.buyer) * p;
+-      const cy = 1.35 + Math.sin(p * Math.PI) * 1.45;
++      // High arc so the coin and its label pass well above the vault's refusal label
++      const cy = 1.45 + Math.sin(p * Math.PI) * 2.25;
+       const cz = 1.35 + Math.sin(p * Math.PI) * 0.4;
+       coinGroup.position.set(cx, cy, cz);
+       coinGroup.rotation.y = p * Math.PI * 4;
+-      projectToScreen(new THREE.Vector3(cx, cy + 0.95, cz), coinLabelEl);
++      const labelY = p < 1 ? cy + 1.05 : 2.55;
++      const labelX = p < 1 ? cx : STATION_X.merchant - 0.35;
++      projectToScreen(new THREE.Vector3(labelX, labelY, cz), coinLabelEl);
+     }
+ 
+     // Coin arrives at Merchant at 24000ms -> Merchant lights up & Settled caption appears
+@@ -992,8 +1041,9 @@
+       } else {
+         ledgerPulseMat.opacity = 0;
+       }
++      // Positioned above chain and shifted slightly left so single-line orderId fits cleanly in 1280x720
+       projectToScreen(
+-        new THREE.Vector3(STATION_X.chain + 0.1, 2.35, 0.5),
++        new THREE.Vector3(STATION_X.chain - 1.35, 3.65, 0.5),
+         ledgerLabelEl
+       );
+     }
+@@ -1005,12 +1055,19 @@
+ 
+     renderer.render(scene, camera);
+ 
++    if (initialSvg && initialSvg.style.display !== 'none') {
++      initialSvg.style.display = 'none';
++    }
++
+     // End with a 3 to 5 second hold of the final state, then set done = true
+     if (elapsedMs >= 32500 && !window.__theater.done) {
+       window.__theater.done = true;
+     }
+   }
+ 
++  // Render immediately at setup so the WebGL canvas is populated before the first rAF tick
++  updateScene(performance.now() - internal.startTime);
++
+   function tick() {
+     const elapsedMs = performance.now() - internal.startTime;
+     updateScene(elapsedMs);
+@@ -1032,6 +1089,7 @@
+     camera.aspect = window.innerWidth / window.innerHeight;
+     camera.updateProjectionMatrix();
+     renderer.setSize(window.innerWidth, window.innerHeight);
++    updateScene(performance.now() - internal.startTime);
+   });
+ 
+   requestAnimationFrame(tick);

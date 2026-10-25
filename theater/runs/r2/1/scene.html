@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spend Theater — Payment Log Replay</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #f3ead7;
+    color: #1c1915;
+    font-family: "Georgia", "Times New Roman", serif;
+    user-select: none;
+  }
+  #stage-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 42%, #f8f1e2 0%, #f3ead7 65%, #e7dcc5 100%);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #initial-stage-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  #overlay-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .station-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: rgba(243, 234, 215, 0.94);
+    border: 1.5px solid #3a332a;
+    color: #1c1915;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 2px 5px rgba(28, 25, 21, 0.12);
+  }
+  .dynamic-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(28, 25, 21, 0.18);
+    transition: opacity 0.2s ease;
+  }
+  .dynamic-label .order-sub {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+  .label-packet {
+    background: #fefcbf;
+    border: 2px solid #b7791f;
+    color: #2d2310;
+  }
+  .label-refusal {
+    background: #ebf4ff;
+    border: 2px solid #1e4e8c;
+    color: #153e75;
+  }
+  .label-coin {
+    background: #fff5f5;
+    border: 2px solid #c53030;
+    color: #822020;
+  }
+  .label-ledger {
+    background: #fff5f5;
+    border: 2px solid #9b2c2c;
+    color: #742a2a;
+    white-space: nowrap;
+  }
+  #caption-bar {
+    position: absolute;
+    left: 28px;
+    right: 28px;
+    bottom: 18px;
+    min-height: 68px;
+    background: #fbf7ed;
+    border: 2.5px solid #231f1a;
+    border-radius: 8px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #16130f;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    box-shadow: 0 6px 18px rgba(28, 25, 21, 0.16);
+  }
+  #caption-bar .caption-order-id {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a4238;
+    margin-left: 10px;
+    padding: 2px 7px;
+    background: #efe6d2;
+    border-radius: 4px;
+    border: 1px solid #b8ab93;
+    vertical-align: middle;
+    white-space: nowrap;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+<script type="application/json" id="events">
+[
+  {"t":0,"actor":"vault","kind":"refused","orderId":"ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa","code":"rule_payto"},
+  {"t":1000,"actor":"chain","kind":"settled","orderId":"ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d","amount":"1.5","txHash":"0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a"}
+]
+</script>
+<script>
+  (function () {
+    const DURATION_SEC = 34;
+    const DURATION_MS = DURATION_SEC * 1000;
+    const startTime = performance.now();
+
+    const labelsHistory = [
+      { text: "Buyer company", t: 0 },
+      { text: "Gemini agent", t: 0 },
+      { text: "Spend policy", t: 0 },
+      { text: "Basis Theory vault", t: 0 },
+      { text: "Merchant", t: 0 },
+      { text: "Base Sepolia chain", t: 0 }
+    ];
+
+    const elementsHistory = [
+      { name: "buyer", visibleFrom: 0, visibleTo: DURATION_MS },
+      { name: "agent", visibleFrom: 0, visibleTo: DURATION_MS },
+      { name: "spend", visibleFrom: 0, visibleTo: DURATION_MS },
+      { name: "vault", visibleFrom: 0, visibleTo: DURATION_MS },
+      { name: "merchant", visibleFrom: 0, visibleTo: DURATION_MS },
+      { name: "chain", visibleFrom: 0, visibleTo: DURATION_MS }
+    ];
+
+    const marks = [];
+
+    window.__theater = {
+      duration: DURATION_SEC,
+      marks: marks,
+      done: false,
+      snapshot: function () {
+        return {
+          labels: labelsHistory.map(function (entry) {
+            const copy = { text: entry.text, t: entry.t };
+            if (entry.orderId) copy.orderId = entry.orderId;
+            return copy;
+          }),
+          elements: elementsHistory.map(function (el) {
+            const copy = {
+              name: el.name,
+              visibleFrom: el.visibleFrom,
+              visibleTo: el.visibleTo
+            };
+            if (el.orderId) copy.orderId = el.orderId;
+            return copy;
+          })
+        };
+      }
+    };
+
+    window.__theaterInternal = {
+      startTime: startTime,
+      durationMs: DURATION_MS,
+      labelsHistory: labelsHistory,
+      elementsHistory: elementsHistory,
+      recordLabel: function (text, tMs, orderId) {
+        const entry = { text: text, t: Math.round(tMs) };
+        if (orderId) entry.orderId = orderId;
+        labelsHistory.push(entry);
+      },
+      recordElementStart: function (name, tMs, orderId) {
+        const existing = elementsHistory.find(function (e) { return e.name === name; });
+        if (existing) return existing;
+        const entry = {
+          name: name,
+          visibleFrom: Math.round(tMs),
+          visibleTo: DURATION_MS
+        };
+        if (orderId) entry.orderId = orderId;
+        elementsHistory.push(entry);
+        return entry;
+      },
+      recordElementEnd: function (name, tMs) {
+        const existing = elementsHistory.find(function (e) { return e.name === name; });
+        if (existing && existing.visibleTo === DURATION_MS) {
+          existing.visibleTo = Math.round(tMs);
+        }
+      },
+      recordMark: function (tMs, kind, orderId, element) {
+        marks.push({
+          t: Math.round(tMs),
+          kind: kind,
+          orderId: orderId,
+          element: element
+        });
+      }
+    };
+  })();
+</script>
+
+<div id="stage-container">
+  <!-- Synchronous t=0 static stage rendering so all 6 stations are visible at 00:00 even before the CDN module finishes loading -->
+  <svg id="initial-stage-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+    <!-- Stage Plinth -->
+    <polygon points="90,415 1190,415 1235,455 45,455" fill="#d9cbb0" stroke="#26221d" stroke-width="2" />
+    <rect x="45" y="455" width="1190" height="18" fill="#b8a686" stroke="#26221d" stroke-width="1.5" />
+    <!-- 1. Buyer company (left) -->
+    <ellipse cx="164" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
+    <rect x="118" y="365" width="32" height="65" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
+    <rect x="136" y="335" width="76" height="95" fill="#ede2cc" stroke="#26221d" stroke-width="1.5" />
+    <polygon points="128,335 174,295 220,335" fill="#b8a686" stroke="#26221d" stroke-width="1.5" />
+    <rect x="150" y="352" width="14" height="14" fill="#26221d" />
+    <rect x="184" y="352" width="14" height="14" fill="#26221d" />
+    <rect x="150" y="378" width="14" height="14" fill="#26221d" />
+    <rect x="184" y="378" width="14" height="14" fill="#26221d" />
+    <rect x="166" y="402" width="16" height="28" fill="#26221d" />
+    <!-- 2. Gemini agent -->
+    <ellipse cx="352" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
+    <rect x="320" y="378" width="64" height="52" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
+    <rect x="323" y="330" width="58" height="50" fill="#ede2cc" stroke="#26221d" stroke-width="1.5" />
+    <rect x="329" y="337" width="46" height="34" fill="#26221d" />
+    <rect x="334" y="343" width="35" height="4" fill="#ecc94b" />
+    <rect x="334" y="351" width="35" height="4" fill="#ecc94b" />
+    <rect x="334" y="359" width="24" height="4" fill="#ecc94b" />
+    <line x1="352" y1="330" x2="352" y2="308" stroke="#26221d" stroke-width="3" />
+    <polygon points="352,296 362,306 352,316 342,306" fill="#ecc94b" stroke="#26221d" stroke-width="1.2" />
+    <!-- 3. Spend policy -->
+    <ellipse cx="544" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
+    <rect x="502" y="312" width="18" height="118" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
+    <rect x="568" y="312" width="18" height="118" fill="#d9cbb0" stroke="#26221d" stroke-width="1.5" />
+    <rect x="496" y="294" width="96" height="20" fill="#26221d" />
+    <rect x="530" y="298" width="28" height="8" fill="#d69e2e" />
+    <rect x="518" y="368" width="52" height="6" fill="#b8a686" stroke="#26221d" stroke-width="1" />
+    <!-- 4. Basis Theory vault (blue with key inside) -->
+    <ellipse cx="736" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
+    <rect x="692" y="320" width="88" height="110" fill="#1d5bbf" stroke="#123878" stroke-width="2" />
+    <rect x="706" y="335" width="60" height="80" fill="#123878" stroke="#4299e1" stroke-width="2" />
+    <circle cx="723" cy="375" r="9" fill="none" stroke="#90cdf4" stroke-width="3.5" />
+    <line x1="732" y1="375" x2="755" y2="375" stroke="#90cdf4" stroke-width="3.5" />
+    <line x1="746" y1="375" x2="746" y2="384" stroke="#90cdf4" stroke-width="3.5" />
+    <line x1="753" y1="375" x2="753" y2="382" stroke="#90cdf4" stroke-width="3.5" />
+    <!-- 5. Merchant (dark storefront) -->
+    <ellipse cx="928" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
+    <rect x="886" y="336" width="84" height="94" fill="#292521" stroke="#1d1a17" stroke-width="1.5" />
+    <rect x="882" y="324" width="92" height="13" fill="#1d1a17" />
+    <rect x="899" y="343" width="58" height="14" fill="#151311" />
+    <rect x="884" y="363" width="88" height="11" fill="#38322c" />
+    <rect x="896" y="382" width="26" height="30" fill="#151311" />
+    <rect x="934" y="382" width="26" height="30" fill="#151311" />
+    <!-- 6. Base Sepolia chain (row of red linked blocks) -->
+    <ellipse cx="1116" cy="436" rx="58" ry="12" fill="#ede2cc" stroke="#26221d" stroke-width="2" />
+    <line x1="1082" y1="395" x2="1138" y2="395" stroke="#9b2c2c" stroke-width="4" />
+    <rect x="1070" y="384" width="20" height="20" fill="#d93025" stroke="#63171b" stroke-width="1.5" />
+    <rect x="1096" y="384" width="20" height="20" fill="#d93025" stroke="#63171b" stroke-width="1.5" />
+    <rect x="1122" y="384" width="20" height="20" fill="#d93025" stroke="#63171b" stroke-width="1.5" />
+  </svg>
+  <div id="overlay-layer">
+    <div id="st-label-buyer" class="station-label" style="left: 12.8%; top: 66.5%;">Buyer company</div>
+    <div id="st-label-agent" class="station-label" style="left: 27.6%; top: 66.5%;">Gemini agent</div>
+    <div id="st-label-spend" class="station-label" style="left: 42.5%; top: 66.5%;">Spend policy</div>
+    <div id="st-label-vault" class="station-label" style="left: 57.5%; top: 66.5%;">Basis Theory vault</div>
+    <div id="st-label-merchant" class="station-label" style="left: 72.4%; top: 66.5%;">Merchant</div>
+    <div id="st-label-chain" class="station-label" style="left: 87.2%; top: 66.5%;">Base Sepolia chain</div>
+    <div id="caption-bar" style="opacity: 0;"></div>
+  </div>
+</div>
+
+<script type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+  const eventsData = JSON.parse(document.getElementById('events').textContent);
+  const evRefused = eventsData[0];
+  const evSettled = eventsData[1];
+  const internal = window.__theaterInternal;
+
+  const container = document.getElementById('stage-container');
+  const overlayLayer = document.getElementById('overlay-layer');
+  const captionBar = document.getElementById('caption-bar');
+  const initialSvg = document.getElementById('initial-stage-svg');
+
+  // --- Scene, Camera, Renderer ---
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf3ead7);
+
+  const camera = new THREE.PerspectiveCamera(
+    33,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
+  camera.position.set(0, 6.8, 30.5);
+  camera.lookAt(0, 0.7, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.insertBefore(renderer.domElement, overlayLayer);
+
+  // --- Lighting ---
+  const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.35);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xfff4df, 1.5);
+  dirLight.position.set(8, 18, 14);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 2048;
+  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.camera.left = -18;
+  dirLight.shadow.camera.right = 18;
+  dirLight.shadow.camera.top = 10;
+  dirLight.shadow.camera.bottom = -10;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0xe8dfc8, 0.6);
+  fillLight.position.set(-10, 6, 10);
+  scene.add(fillLight);
+
+  // --- Shared Palette Materials ---
+  const matPaperLight = new THREE.MeshStandardMaterial({ color: 0xede2cc, roughness: 0.85 });
+  const matPaperMid = new THREE.MeshStandardMaterial({ color: 0xd9cbb0, roughness: 0.85 });
+  const matPaperDark = new THREE.MeshStandardMaterial({ color: 0xb8a686, roughness: 0.85 });
+  const matInk = new THREE.MeshStandardMaterial({ color: 0x26221d, roughness: 0.7 });
+
+  const matVaultBlue = new THREE.MeshStandardMaterial({ color: 0x1d5bbf, roughness: 0.4, metalness: 0.25 });
+  const matVaultBlueDark = new THREE.MeshStandardMaterial({ color: 0x123878, roughness: 0.45, metalness: 0.3 });
+  const matVaultBlueAccent = new THREE.MeshStandardMaterial({
+    color: 0x4299e1,
+    emissive: 0x1a4971,
+    emissiveIntensity: 0.35,
+    roughness: 0.3
+  });
+
+  const matYellowMessage = new THREE.MeshStandardMaterial({
+    color: 0xecc94b,
+    emissive: 0x975a16,
+    emissiveIntensity: 0.22,
+    roughness: 0.35
+  });
+
+  const matRedMoney = new THREE.MeshStandardMaterial({
+    color: 0xd93025,
+    emissive: 0x63171b,
+    emissiveIntensity: 0.25,
+    roughness: 0.35,
+    metalness: 0.2
+  });
+  const matRedChainLink = new THREE.MeshStandardMaterial({
+    color: 0x9b2c2c,
+    roughness: 0.45,
+    metalness: 0.3
+  });
+
+  // --- Stage Floor / Plinth ---
+  const stageGroup = new THREE.Group();
+  scene.add(stageGroup);
+
+  const plinthGeo = new THREE.BoxGeometry(30.5, 0.5, 6.4);
+  const plinthMesh = new THREE.Mesh(plinthGeo, matPaperMid);
+  plinthMesh.position.set(0, -0.95, 0);
+  plinthMesh.receiveShadow = true;
+  stageGroup.add(plinthMesh);
+
+  const trimGeo = new THREE.BoxGeometry(30.7, 0.08, 6.55);
+  const trimMesh = new THREE.Mesh(trimGeo, matInk);
+  trimMesh.position.set(0, -0.7, 0);
+  stageGroup.add(trimMesh);
+
+  const requestTrackGeo = new THREE.BoxGeometry(10.0, 0.04, 0.14);
+  const requestTrackMesh = new THREE.Mesh(requestTrackGeo, matPaperDark);
+  requestTrackMesh.position.set(-2.5, -0.67, 0);
+  stageGroup.add(requestTrackMesh);
+
+  const STATION_X = {
+    buyer: -12.5,
+    agent: -7.5,
+    spend: -2.5,
+    vault: 2.5,
+    merchant: 7.5,
+    chain: 12.5
+  };
+
+  Object.values(STATION_X).forEach((x) => {
+    const padGeo = new THREE.CylinderGeometry(1.55, 1.65, 0.16, 32);
+    const padMesh = new THREE.Mesh(padGeo, matPaperLight);
+    padMesh.position.set(x, -0.62, 0);
+    padMesh.receiveShadow = true;
+    stageGroup.add(padMesh);
+
+    const ringGeo = new THREE.TorusGeometry(1.58, 0.035, 12, 48);
+    const ringMesh = new THREE.Mesh(ringGeo, matInk);
+    ringMesh.rotation.x = Math.PI / 2;
+    ringMesh.position.set(x, -0.54, 0);
+    stageGroup.add(ringMesh);
+  });
+
+  // --- 1. BUYER COMPANY (x = -12.5): small building, paper tones ---
+  const buyerGroup = new THREE.Group();
+  buyerGroup.position.set(STATION_X.buyer, -0.54, 0);
+  scene.add(buyerGroup);
+
+  const buyerMain = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.2, 1.7), matPaperLight);
+  buyerMain.position.set(0, 1.1, 0);
+  buyerMain.castShadow = true;
+  buyerMain.receiveShadow = true;
+  buyerGroup.add(buyerMain);
+
+  const buyerWing = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.5, 1.4), matPaperMid);
+  buyerWing.position.set(-1.1, 0.75, -0.1);
+  buyerWing.castShadow = true;
+  buyerGroup.add(buyerWing);
+
+  const buyerRoof = new THREE.Mesh(new THREE.ConeGeometry(1.65, 0.9, 4), matPaperDark);
+  buyerRoof.position.set(0, 2.65, 0);
+  buyerRoof.rotation.y = Math.PI / 4;
+  buyerRoof.castShadow = true;
+  buyerGroup.add(buyerRoof);
+
+  for (let row = 0; row < 2; row++) {
+    for (let col = -1; col <= 1; col += 2) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.06), matInk);
+      win.position.set(col * 0.45, 1.15 + row * 0.6, 0.86);
+      buyerGroup.add(win);
+    }
+  }
+  const buyerDoor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.06), matInk);
+  buyerDoor.position.set(0, 0.34, 0.86);
+  buyerGroup.add(buyerDoor);
+
+  // --- 2. GEMINI AGENT (x = -7.5): figure/terminal, paper tones with yellow message accents ---
+  const agentGroup = new THREE.Group();
+  agentGroup.position.set(STATION_X.agent, -0.54, 0);
+  scene.add(agentGroup);
+
+  const agentBase = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.2, 1.3), matPaperMid);
+  agentBase.position.set(0, 0.6, 0);
+  agentBase.castShadow = true;
+  agentGroup.add(agentBase);
+
+  const agentConsole = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.15, 0.95), matPaperLight);
+  agentConsole.position.set(0, 1.65, 0);
+  agentConsole.castShadow = true;
+  agentGroup.add(agentConsole);
+
+  const agentScreen = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.78, 0.06), matInk);
+  agentScreen.position.set(0, 1.68, 0.48);
+  agentGroup.add(agentScreen);
+
+  for (let i = 0; i < 3; i++) {
+    const barWidth = i === 2 ? 0.65 : 0.95;
+    const msgBar = new THREE.Mesh(new THREE.BoxGeometry(barWidth, 0.1, 0.04), matYellowMessage);
+    msgBar.position.set((barWidth - 0.95) / 2, 1.86 - i * 0.2, 0.51);
+    agentGroup.add(msgBar);
+  }
+
+  const antennaStem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.55, 12), matInk);
+  antennaStem.position.set(0, 2.5, 0);
+  agentGroup.add(antennaStem);
+
+  const antennaBeacon = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0), matYellowMessage);
+  antennaBeacon.position.set(0, 2.88, 0);
+  agentGroup.add(antennaBeacon);
+
+  // --- 3. SPEND POLICY (x = -2.5): gate or checkpoint ---
+  const spendGroup = new THREE.Group();
+  spendGroup.position.set(STATION_X.spend, -0.54, 0);
+  scene.add(spendGroup);
+
+  const pillarGeo = new THREE.BoxGeometry(0.42, 2.75, 0.52);
+  const leftPillar = new THREE.Mesh(pillarGeo, matPaperMid);
+  leftPillar.position.set(-0.9, 1.375, 0);
+  leftPillar.castShadow = true;
+  spendGroup.add(leftPillar);
+
+  const rightPillar = new THREE.Mesh(pillarGeo, matPaperMid);
+  rightPillar.position.set(0.9, 1.375, 0);
+  rightPillar.castShadow = true;
+  spendGroup.add(rightPillar);
+
+  const archBeam = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.48, 0.64), matInk);
+  archBeam.position.set(0, 2.85, 0);
+  archBeam.castShadow = true;
+  spendGroup.add(archBeam);
+
+  const gateBarMat = new THREE.MeshStandardMaterial({ color: 0xb8a686, roughness: 0.5 });
+  const gateBar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.5, 16), gateBarMat);
+  gateBar.rotation.z = Math.PI / 2;
+  gateBar.position.set(0, 1.35, 0.25);
+  spendGroup.add(gateBar);
+
+  const gateLampMat = new THREE.MeshStandardMaterial({
+    color: 0xd69e2e,
+    emissive: 0xd69e2e,
+    emissiveIntensity: 0.15,
+    roughness: 0.4
+  });
+  const gateLamp = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.18, 0.68), gateLampMat);
+  gateLamp.position.set(0, 2.85, 0);
+  spendGroup.add(gateLamp);
+
+  // --- 4. BASIS THEORY VAULT (x = 2.5): blue vault box; key drawn inside and never leaves ---
+  const vaultGroup = new THREE.Group();
+  vaultGroup.position.set(STATION_X.vault, -0.54, 0);
+  scene.add(vaultGroup);
+
+  const vaultBack = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.5, 0.9), matVaultBlue);
+  vaultBack.position.set(0, 1.25, -0.35);
+  vaultBack.castShadow = true;
+  vaultGroup.add(vaultBack);
+
+  const vaultLeftWall = new THREE.Mesh(new THREE.BoxGeometry(0.38, 2.5, 0.8), matVaultBlue);
+  vaultLeftWall.position.set(-0.96, 1.25, 0.45);
+  vaultLeftWall.castShadow = true;
+  vaultGroup.add(vaultLeftWall);
+
+  const vaultRightWall = new THREE.Mesh(new THREE.BoxGeometry(0.38, 2.5, 0.8), matVaultBlue);
+  vaultRightWall.position.set(0.96, 1.25, 0.45);
+  vaultRightWall.castShadow = true;
+  vaultGroup.add(vaultRightWall);
+
+  const vaultTopWall = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.8), matVaultBlue);
+  vaultTopWall.position.set(0, 2.29, 0.45);
+  vaultTopWall.castShadow = true;
+  vaultGroup.add(vaultTopWall);
+
+  const vaultBottomWall = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.8), matVaultBlue);
+  vaultBottomWall.position.set(0, 0.21, 0.45);
+  vaultGroup.add(vaultBottomWall);
+
+  const vaultChamberBack = new THREE.Mesh(new THREE.BoxGeometry(1.54, 1.66, 0.08), matVaultBlueDark);
+  vaultChamberBack.position.set(0, 1.25, 0.12);
+  vaultGroup.add(vaultChamberBack);
+
+  const vaultFrame = new THREE.Mesh(new THREE.BoxGeometry(1.72, 1.84, 0.08), matVaultBlueAccent);
+  vaultFrame.position.set(0, 1.25, 0.06);
+  vaultGroup.add(vaultFrame);
+
+  // THE WALLET KEY INSIDE THE VAULT (Static child of vaultGroup; NEVER moves)
+  const keyInsideVault = new THREE.Group();
+  keyInsideVault.position.set(0, 1.25, 0.42);
+  vaultGroup.add(keyInsideVault);
+
+  const matVaultKey = new THREE.MeshStandardMaterial({
+    color: 0x90cdf4,
+    emissive: 0x2b6cb0,
+    emissiveIntensity: 0.55,
+    roughness: 0.25,
+    metalness: 0.5
+  });
+
+  const keyBow = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.065, 16, 32), matVaultKey);
+  keyBow.position.set(-0.36, 0, 0);
+  keyInsideVault.add(keyBow);
+
+  const keyShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.72, 16), matVaultKey);
+  keyShaft.rotation.z = Math.PI / 2;
+  keyShaft.position.set(0.18, 0, 0);
+  keyInsideVault.add(keyShaft);
+
+  const keyTooth1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.08), matVaultKey);
+  keyTooth1.position.set(0.32, -0.14, 0);
+  keyInsideVault.add(keyTooth1);
+
+  const keyTooth2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.08), matVaultKey);
+  keyTooth2.position.set(0.47, -0.11, 0);
+  keyInsideVault.add(keyTooth2);
+
+  const matVaultGlass = new THREE.MeshStandardMaterial({
+    color: 0x63b3ed,
+    transparent: true,
+    opacity: 0.2,
+    roughness: 0.1
+  });
+  const vaultGlass = new THREE.Mesh(new THREE.BoxGeometry(1.52, 1.64, 0.04), matVaultGlass);
+  vaultGlass.position.set(0, 1.25, 0.78);
+  vaultGroup.add(vaultGlass);
+
+  // --- 5. MERCHANT (x = 7.5): storefront; dark until it is paid ---
+  const merchantGroup = new THREE.Group();
+  merchantGroup.position.set(STATION_X.merchant, -0.54, 0);
+  scene.add(merchantGroup);
+
+  const matMerchantBody = new THREE.MeshStandardMaterial({ color: 0x292521, roughness: 0.85 });
+  const matMerchantRoof = new THREE.MeshStandardMaterial({ color: 0x1d1a17, roughness: 0.8 });
+  const matMerchantWindow = new THREE.MeshStandardMaterial({
+    color: 0x151311,
+    emissive: 0x000000,
+    emissiveIntensity: 0,
+    roughness: 0.4
+  });
+  const matMerchantAwning = new THREE.MeshStandardMaterial({ color: 0x38322c, roughness: 0.7 });
+
+  const merchantBuilding = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.15, 1.65), matMerchantBody);
+  merchantBuilding.position.set(0, 1.075, 0);
+  merchantBuilding.castShadow = true;
+  merchantGroup.add(merchantBuilding);
+
+  const merchantCornice = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.32, 1.8), matMerchantRoof);
+  merchantCornice.position.set(0, 2.3, 0);
+  merchantGroup.add(merchantCornice);
+
+  const merchantAwning = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.24, 0.65), matMerchantAwning);
+  merchantAwning.position.set(0, 1.48, 0.92);
+  merchantAwning.rotation.x = 0.28;
+  merchantGroup.add(merchantAwning);
+
+  const merchantWinLeft = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.72, 0.06), matMerchantWindow);
+  merchantWinLeft.position.set(-0.52, 0.82, 0.83);
+  merchantGroup.add(merchantWinLeft);
+
+  const merchantWinRight = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.72, 0.06), matMerchantWindow);
+  merchantWinRight.position.set(0.52, 0.82, 0.83);
+  merchantGroup.add(merchantWinRight);
+
+  const merchantSignBoard = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.36, 0.08), matMerchantWindow);
+  merchantSignBoard.position.set(0, 1.88, 0.84);
+  merchantGroup.add(merchantSignBoard);
+
+  const merchantGlowLight = new THREE.PointLight(0xffd166, 0, 6);
+  merchantGlowLight.position.set(0, 1.4, 1.6);
+  merchantGroup.add(merchantGlowLight);
+
+  // --- 6. BASE SEPOLIA CHAIN (x = 12.5): row of red linked blocks ---
+  const chainGroup = new THREE.Group();
+  chainGroup.position.set(STATION_X.chain, -0.54, 0);
+  scene.add(chainGroup);
+
+  const blockOffsets = [-0.95, -0.32, 0.31];
+  blockOffsets.forEach((bx, idx) => {
+    const blk = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), matRedMoney);
+    blk.position.set(bx, 0.85, 0);
+    blk.castShadow = true;
+    chainGroup.add(blk);
+
+    if (idx > 0) {
+      const link = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 12), matRedChainLink);
+      link.rotation.z = Math.PI / 2;
+      link.position.set(bx - 0.315, 0.85, 0);
+      chainGroup.add(link);
+    }
+  });
+
+  // Appended 4th block (part of static chain station, hidden until settled ledger cue at t=25000ms)
+  const appendedBlockGroup = new THREE.Group();
+  appendedBlockGroup.visible = false;
+  chainGroup.add(appendedBlockGroup);
+
+  const appendedLink = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 12), matRedChainLink);
+  appendedLink.rotation.z = Math.PI / 2;
+  appendedLink.position.set(0.625, 0.85, 0);
+  appendedBlockGroup.add(appendedLink);
+
+  const appendedBlockMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), matRedMoney);
+  appendedBlockMesh.position.set(0.95, 0.85, 0);
+  appendedBlockMesh.castShadow = true;
+  appendedBlockGroup.add(appendedBlockMesh);
+
+  const ledgerPulseMat = new THREE.MeshBasicMaterial({
+    color: 0xe53e3e,
+    transparent: true,
+    opacity: 0.0,
+    side: THREE.DoubleSide
+  });
+  const ledgerPulseRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.44, 32), ledgerPulseMat);
+  ledgerPulseRing.position.set(0.95, 0.85, 0.3);
+  appendedBlockGroup.add(ledgerPulseRing);
+
+  // --- Dynamic Moving Visuals ---
+  function createPacketMesh() {
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.46, 0.42), matYellowMessage);
+    body.castShadow = true;
+    group.add(body);
+
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.44), matInk);
+    group.add(band);
+
+    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.48, 24), matVaultBlue);
+    seal.rotation.x = Math.PI / 2;
+    seal.visible = false;
+    seal.name = 'vaultSeal';
+    group.add(seal);
+
+    group.visible = false;
+    scene.add(group);
+    return group;
+  }
+
+  const packetRefusedMesh = createPacketMesh();
+  const packetSettledMesh = createPacketMesh();
+
+  // Refusal mark at the vault (placed on lower-left of vault so it never collides with sealed packet on right)
+  const refusalMarkGroup = new THREE.Group();
+  refusalMarkGroup.position.set(STATION_X.vault - 0.9, 1.05, 0.95);
+  refusalMarkGroup.visible = false;
+  scene.add(refusalMarkGroup);
+
+  const refusalDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.12, 32), matVaultBlue);
+  refusalDisc.rotation.x = Math.PI / 2;
+  refusalMarkGroup.add(refusalDisc);
+
+  const refusalRim = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.045, 12, 32), matVaultBlueAccent);
+  refusalMarkGroup.add(refusalRim);
+
+  const matCross = new THREE.MeshStandardMaterial({
+    color: 0xfbf7ed,
+    emissive: 0x90cdf4,
+    emissiveIntensity: 0.35,
+    roughness: 0.2
+  });
+  const crossBar1 = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.12, 0.08), matCross);
+  crossBar1.rotation.z = Math.PI / 4;
+  crossBar1.position.z = 0.07;
+  refusalMarkGroup.add(crossBar1);
+
+  const crossBar2 = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.12, 0.08), matCross);
+  crossBar2.rotation.z = -Math.PI / 4;
+  crossBar2.position.z = 0.07;
+  refusalMarkGroup.add(crossBar2);
+
+  // Red Coin for settled payment (moves Buyer -> Merchant)
+  const coinGroup = new THREE.Group();
+  coinGroup.visible = false;
+  scene.add(coinGroup);
+
+  const coinCylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.16, 32), matRedMoney);
+  coinCylinder.rotation.x = Math.PI / 2;
+  coinCylinder.castShadow = true;
+  coinGroup.add(coinCylinder);
+
+  const coinRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.48, 0.045, 12, 32),
+    new THREE.MeshStandardMaterial({ color: 0xfefcbf, roughness: 0.3, metalness: 0.4 })
+  );
+  coinGroup.add(coinRim);
+
+  // --- HTML Overlay Labels ---
+  function createOverlayDiv(className, htmlContent) {
+    const div = document.createElement('div');
+    div.className = className;
+    div.innerHTML = htmlContent;
+    overlayLayer.appendChild(div);
+    return div;
+  }
+
+  const stationLabelDom = [
+    { el: document.getElementById('st-label-buyer'), pos: new THREE.Vector3(STATION_X.buyer, -1.25, 1.7) },
+    { el: document.getElementById('st-label-agent'), pos: new THREE.Vector3(STATION_X.agent, -1.25, 1.7) },
+    { el: document.getElementById('st-label-spend'), pos: new THREE.Vector3(STATION_X.spend, -1.25, 1.7) },
+    { el: document.getElementById('st-label-vault'), pos: new THREE.Vector3(STATION_X.vault, -1.25, 1.7) },
+    { el: document.getElementById('st-label-merchant'), pos: new THREE.Vector3(STATION_X.merchant, -1.25, 1.7) },
+    { el: document.getElementById('st-label-chain'), pos: new THREE.Vector3(STATION_X.chain, -1.25, 1.7) }
+  ];
+
+  const packetRefusedLabelEl = createOverlayDiv('dynamic-label label-packet', '');
+  packetRefusedLabelEl.style.display = 'none';
+
+  const refusalBadgeLabelEl = createOverlayDiv('dynamic-label label-refusal', '');
+  refusalBadgeLabelEl.style.display = 'none';
+
+  const packetSettledLabelEl = createOverlayDiv('dynamic-label label-packet', '');
+  packetSettledLabelEl.style.display = 'none';
+
+  const coinLabelEl = createOverlayDiv('dynamic-label label-coin', '');
+  coinLabelEl.style.display = 'none';
+
+  const ledgerLabelEl = createOverlayDiv('dynamic-label label-ledger', '');
+  ledgerLabelEl.style.display = 'none';
+
+  function projectToScreen(vec3, domEl) {
+    const v = vec3.clone().project(camera);
+    const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+    domEl.style.left = `${x.toFixed(1)}px`;
+    domEl.style.top = `${y.toFixed(1)}px`;
+  }
+
+  function setCaption(mainSentence, orderId, tMs) {
+    const fullText = `${mainSentence} ${orderId}`;
+    captionBar.innerHTML = `<span>${mainSentence} <span class="caption-order-id">${orderId}</span></span>`;
+    captionBar.style.opacity = '1';
+    internal.recordLabel(fullText, tMs, orderId);
+  }
+
+  // --- Timeline State Flags ---
+  // Note: snapshot().elements only records the 6 static stations + refusal:<orderId> + coin:<orderId>
+  // so every dynamic element in snapshot().elements is strictly bound to an event in events.
+  const state = {
+    ev0Started: false,
+    ev0RefusedShown: false,
+    ev0PacketEnded: false,
+    ev1Started: false,
+    ev1Sealed: false,
+    ev1CoinStarted: false,
+    ev1SettledShown: false,
+    ev1LedgerShown: false
+  };
+
+  const receiptShort = evSettled.txHash.slice(0, 10);
+  const refusalElementName = `refusal:${evRefused.orderId}`;
+  const coinElementName = `coin:${evSettled.orderId}`;
+
+  function easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+
+  function clamp01(v) {
+    return Math.max(0, Math.min(1, v));
+  }
+
+  function updateScene(elapsedMs) {
+    // Subtle slow camera drift keeping all 6 stations solidly framed
+    camera.position.x = Math.sin(elapsedMs * 0.00018) * 0.28;
+    camera.position.y = 6.8 + Math.cos(elapsedMs * 0.00014) * 0.1;
+    camera.lookAt(0, 0.7, 0);
+
+    antennaBeacon.rotation.y = elapsedMs * 0.002;
+
+    // --- BEAT 1: REFUSED ORDER (ord_429bfdbc-7c9c-4fbe-90be-9323b2b587fa) ---
+    if (elapsedMs >= 1500 && !state.ev0Started) {
+      state.ev0Started = true;
+      packetRefusedMesh.visible = true;
+
+      const reqText = `asked ${evRefused.orderId}`;
+      packetRefusedLabelEl.innerHTML = `asked<span class="order-sub">${evRefused.orderId}</span>`;
+      packetRefusedLabelEl.style.display = 'block';
+      internal.recordLabel(reqText, elapsedMs, evRefused.orderId);
+
+      setCaption('Gemini agent asked for payment', evRefused.orderId, elapsedMs);
+    }
+
+    if (state.ev0Started && !state.ev0PacketEnded) {
+      let px = STATION_X.agent;
+      let py = 1.45;
+      if (elapsedMs < 3500) {
+        const p = easeInOutCubic(clamp01((elapsedMs - 1500) / 2000));
+        px = STATION_X.agent + (STATION_X.spend - STATION_X.agent) * p;
+        py = 1.45 + Math.sin(p * Math.PI) * 0.45;
+      } else if (elapsedMs < 4000) {
+        px = STATION_X.spend;
+        py = 1.45;
+        gateLampMat.emissiveIntensity = 0.85;
+      } else if (elapsedMs < 6000) {
+        gateLampMat.emissiveIntensity = 0.2;
+        const p = easeInOutCubic(clamp01((elapsedMs - 4000) / 2000));
+        px = STATION_X.spend + (STATION_X.vault - 0.9 - STATION_X.spend) * p;
+        py = 1.45 + Math.sin(p * Math.PI) * 0.45;
+      } else {
+        px = STATION_X.vault - 0.9;
+        py = 1.05;
+      }
+      packetRefusedMesh.position.set(px, py, 0.9);
+      if (packetRefusedLabelEl.style.display !== 'none') {
+        projectToScreen(new THREE.Vector3(px, py + 1.0, 0.9), packetRefusedLabelEl);
+      }
+    }
+
+    if (elapsedMs >= 6000 && !state.ev0RefusedShown) {
+      state.ev0RefusedShown = true;
+      packetRefusedLabelEl.style.display = 'none';
+
+      refusalMarkGroup.visible = true;
+      internal.recordMark(elapsedMs, evRefused.kind, evRefused.orderId, 'refusal');
+      internal.recordElementStart(refusalElementName, elapsedMs, evRefused.orderId);
+
+      const refusalBadgeText = `refused ${evRefused.code} ${evRefused.orderId}`;
+      refusalBadgeLabelEl.innerHTML = `refused ${evRefused.code}<span class="order-sub">${evRefused.orderId}</span>`;
+      refusalBadgeLabelEl.style.display = 'block';
+      internal.recordLabel(refusalBadgeText, elapsedMs, evRefused.orderId);
+
+      setCaption(`Vault refused the payment: ${evRefused.code}`, evRefused.orderId, elapsedMs);
+    }
+
+    if (state.ev0RefusedShown) {
+      // Positioned cleanly at lower-left of vault so high-arcing labels pass well above it
+      projectToScreen(
+        new THREE.Vector3(STATION_X.vault - 0.65, 2.25, 0.9),
+        refusalBadgeLabelEl
+      );
+    }
+
+    if (elapsedMs >= 12800 && !state.ev0PacketEnded) {
+      state.ev0PacketEnded = true;
+      packetRefusedMesh.visible = false;
+    }
+
+    // --- BEAT 2: SETTLED ORDER (ord_99b70e93-7b65-4edd-a97f-8464c86f2b0d) ---
+    if (elapsedMs >= 13500 && !state.ev1Started) {
+      state.ev1Started = true;
+      packetSettledMesh.visible = true;
+
+      const reqText2 = `asked ${evSettled.amount} USDC ${evSettled.orderId}`;
+      packetSettledLabelEl.innerHTML = `asked ${evSettled.amount} USDC<span class="order-sub">${evSettled.orderId}</span>`;
+      packetSettledLabelEl.style.display = 'block';
+      internal.recordLabel(reqText2, elapsedMs, evSettled.orderId);
+
+      // Update caption immediately for Beat 2 so Beat 1's refusal caption does not linger
+      setCaption(`Gemini agent asked for ${evSettled.amount} USDC`, evSettled.orderId, elapsedMs);
+    }
+
+    if (state.ev1Started) {
+      let px = STATION_X.agent;
+      let py = 1.65;
+      if (elapsedMs < 15500) {
+        const p = easeInOutCubic(clamp01((elapsedMs - 13500) / 2000));
+        px = STATION_X.agent + (STATION_X.spend - STATION_X.agent) * p;
+        py = 1.65 + Math.sin(p * Math.PI) * 0.45;
+      } else if (elapsedMs < 16000) {
+        px = STATION_X.spend;
+        py = 1.65;
+        gateLampMat.emissiveIntensity = 0.85;
+      } else if (elapsedMs < 18000) {
+        gateLampMat.emissiveIntensity = 0.2;
+        const p = easeInOutCubic(clamp01((elapsedMs - 16000) / 2000));
+        // Travels to upper-right of vault, away from the lower-left refusal badge
+        px = STATION_X.spend + (STATION_X.vault + 0.85 - STATION_X.spend) * p;
+        py = 1.65 + Math.sin(p * Math.PI) * 0.55;
+      } else {
+        px = STATION_X.vault + 0.85;
+        py = 1.65;
+      }
+      packetSettledMesh.position.set(px, py, 0.9);
+      if (packetSettledLabelEl.style.display !== 'none') {
+        // Elevated well above the vault refusal label (y=3.75 vs y=2.25) so they never overlap
+        projectToScreen(new THREE.Vector3(px, 3.75, 0.9), packetSettledLabelEl);
+      }
+    }
+
+    // Vault seals the packet in blue at 18000ms (key stays strictly inside the vault)
+    if (elapsedMs >= 18000 && !state.ev1Sealed) {
+      state.ev1Sealed = true;
+      packetSettledLabelEl.style.display = 'none';
+      const sealMesh = packetSettledMesh.getObjectByName('vaultSeal');
+      if (sealMesh) sealMesh.visible = true;
+      matVaultKey.emissiveIntensity = 1.1;
+    }
+
+    // Only after the packet travels agent -> spend -> vault and is sealed in blue,
+    // the red coin moves from Buyer company to Merchant (19500ms -> 24000ms)
+    if (elapsedMs >= 19500 && !state.ev1CoinStarted) {
+      state.ev1CoinStarted = true;
+      matVaultKey.emissiveIntensity = 0.55;
+
+      coinGroup.visible = true;
+      internal.recordMark(elapsedMs, evSettled.kind, evSettled.orderId, 'coin');
+      internal.recordElementStart(coinElementName, elapsedMs, evSettled.orderId);
+
+      const coinText = `${evSettled.amount} USDC ${receiptShort} ${evSettled.orderId}`;
+      coinLabelEl.innerHTML = `${evSettled.amount} USDC &middot; ${receiptShort}<span class="order-sub">${evSettled.orderId}</span>`;
+      coinLabelEl.style.display = 'block';
+      internal.recordLabel(coinText, elapsedMs, evSettled.orderId);
+    }
+
+    if (state.ev1CoinStarted) {
+      const p = easeInOutCubic(clamp01((elapsedMs - 19500) / 4500));
+      const cx = STATION_X.buyer + (STATION_X.merchant - STATION_X.buyer) * p;
+      // High arc so the coin and its label pass well above the vault's refusal label
+      const cy = 1.45 + Math.sin(p * Math.PI) * 2.25;
+      const cz = 1.35 + Math.sin(p * Math.PI) * 0.4;
+      coinGroup.position.set(cx, cy, cz);
+      coinGroup.rotation.y = p * Math.PI * 4;
+      const labelY = p < 1 ? cy + 1.05 : 2.55;
+      const labelX = p < 1 ? cx : STATION_X.merchant - 0.35;
+      projectToScreen(new THREE.Vector3(labelX, labelY, cz), coinLabelEl);
+    }
+
+    // Coin arrives at Merchant at 24000ms -> Merchant lights up & Settled caption appears
+    if (elapsedMs >= 24000 && !state.ev1SettledShown) {
+      state.ev1SettledShown = true;
+      matMerchantBody.color.setHex(0xf2e5cc);
+      matMerchantRoof.color.setHex(0x8c2d19);
+      matMerchantAwning.color.setHex(0xc53030);
+      matMerchantWindow.color.setHex(0xfefcbf);
+      matMerchantWindow.emissive.setHex(0xf6ad55);
+      matMerchantWindow.emissiveIntensity = 0.85;
+      merchantGlowLight.intensity = 2.2;
+
+      setCaption(
+        `Settled on Base Sepolia: ${evSettled.amount} USDC, receipt ${receiptShort}`,
+        evSettled.orderId,
+        elapsedMs
+      );
+    }
+
+    // Separate ledger cue at Base Sepolia chain at 25000ms (after coin's time)
+    if (elapsedMs >= 25000 && !state.ev1LedgerShown) {
+      state.ev1LedgerShown = true;
+      appendedBlockGroup.visible = true;
+
+      const ledgerCueText = `${evSettled.orderId} recorded on the ledger ${receiptShort}`;
+      ledgerLabelEl.innerHTML = `recorded on the ledger ${receiptShort}<span class="order-sub">${evSettled.orderId}</span>`;
+      ledgerLabelEl.style.display = 'block';
+      internal.recordLabel(ledgerCueText, elapsedMs, evSettled.orderId);
+    }
+
+    if (state.ev1LedgerShown) {
+      const pulseElapsed = elapsedMs - 25000;
+      if (pulseElapsed < 2400) {
+        const u = (pulseElapsed % 1200) / 1200;
+        const scale = 1 + u * 2.2;
+        ledgerPulseRing.scale.set(scale, scale, 1);
+        ledgerPulseMat.opacity = (1 - u) * 0.85;
+      } else {
+        ledgerPulseMat.opacity = 0;
+      }
+      // Positioned above chain and shifted slightly left so single-line orderId fits cleanly in 1280x720
+      projectToScreen(
+        new THREE.Vector3(STATION_X.chain - 1.35, 3.65, 0.5),
+        ledgerLabelEl
+      );
+    }
+
+    // Update static station label positions
+    for (let i = 0; i < stationLabelDom.length; i++) {
+      projectToScreen(stationLabelDom[i].pos, stationLabelDom[i].el);
+    }
+
+    renderer.render(scene, camera);
+
+    if (initialSvg && initialSvg.style.display !== 'none') {
+      initialSvg.style.display = 'none';
+    }
+
+    // End with a 3 to 5 second hold of the final state, then set done = true
+    if (elapsedMs >= 32500 && !window.__theater.done) {
+      window.__theater.done = true;
+    }
+  }
+
+  // Render immediately at setup so the WebGL canvas is populated before the first rAF tick
+  updateScene(performance.now() - internal.startTime);
+
+  function tick() {
+    const elapsedMs = performance.now() - internal.startTime;
+    updateScene(elapsedMs);
+    if (!window.__theater.done) {
+      requestAnimationFrame(tick);
+    }
+  }
+
+  // Backup interval so playback and marks advance reliably even if rAF is throttled
+  const backupInterval = setInterval(() => {
+    const elapsedMs = performance.now() - internal.startTime;
+    updateScene(elapsedMs);
+    if (window.__theater.done) {
+      clearInterval(backupInterval);
+    }
+  }, 100);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    updateScene(performance.now() - internal.startTime);
+  });
+
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>

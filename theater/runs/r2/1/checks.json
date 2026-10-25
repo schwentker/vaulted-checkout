@@ -1,0 +1,19 @@
+{
+  "contradictions": 0,
+  "order_errors": 2,
+  "amount_errors": 0,
+  "render_failures": 0,
+  "total_bad": 2,
+  "issues": [
+    {
+      "category": "order_errors",
+      "code": "amount_before_event",
+      "index": 10
+    },
+    {
+      "category": "order_errors",
+      "code": "amount_before_event",
+      "index": 11
+    }
+  ]
+}

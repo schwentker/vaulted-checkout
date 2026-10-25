@@ -43,7 +43,7 @@ Spend Theater turns the real payment log into a 30 to 45 second 3D replay and im
 
 Every iteration is listed in a scoreboard, including any that get worse. Frozen counts come first. Critic scores come second and are labeled "model-judged, same model family as the generator".
 
-First exploratory runs on the recorded Gate B log (a real settlement and a real refusal), built before the spec was final (so not clean measurements): frozen-check errors went 2, 1, 0 in one run and 3, 0 in another, each time with a critic pass at the end. A clean measured run is being added. Evidence is under `theater/runs/`.
+A clean run on the recorded Gate B log (a real settlement and a real refusal), using the final spec, went 2, 2, 0 frozen-check errors over three iterations and ended with a critic pass. The middle step traded one kind of error for another with no net gain, and is kept in the results. Two earlier exploratory runs on a defective spec (2, 1, 0 and 3, 0) are archived under `theater/runs/`. The frozen checks read the scene's own telemetry, so zero means no recorded contradictions, not proof of every drawn claim. Evidence is under `theater/runs/`.
 
 The loop works with the API (`--mode api`) or by copy and paste through AI Studio (`--mode manual`), with every model input and output hashed in `theater/manifest.json`.
 
