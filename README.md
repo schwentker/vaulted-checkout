@@ -1,31 +1,66 @@
 # Vaulted Checkout
 
-An AI agent that can ask to buy, while only a vault can sign, inside fixed rules. Built for the Gemini 4 Argon hackathon on Base Sepolia testnet.
+AI agents can ask to pay. Only a vault can sign, and only inside fixed rules.
 
-## What it does
+A Gemini agent shops over MCP and pays in USDC on Base Sepolia. The wallet key never touches the agent, the buyer's spend service, or any AI session. It lives in a Basis Theory vault, and a Reactor signs only the payments that pass the vault's own checks. A second part of the project uses Gemini 4 Argon to build, watch, critique and repair a visual replay of the payment log, scored by a frozen evaluator that Argon cannot edit.
 
-1. A Gemini agent shops a store over MCP: list products, create an order, pay.
-2. The buyer-side spend service checks policy and seals an intent with an HMAC. It never holds the wallet key.
-3. A Basis Theory Reactor checks the intent against its own fixed rules (payee, per-payment amount) and signs an EIP-3009 USDC authorization with a vaulted key. The key never leaves the vault.
-4. The merchant settles over x402 v2 on Base Sepolia. An order is paid only after confirmed settlement.
-5. Gemini 4 Argon turns the recorded payment log into a short 3D replay (Spend Theater), watches the rendered video, critiques it, and repairs it. A frozen, deterministic evaluator checks the replay against the log.
+## Why it matters
 
-Real evidence from the first live payment: 1.5 USDC settled in tx `0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a`, after an earlier order was refused by the vault with `rule_payto`. See [fixtures/events-gate-b.jsonl](fixtures/events-gate-b.jsonl) and [docs/handoff/gate-b.md](docs/handoff/gate-b.md).
+Spend controls that live in the agent's own process can be talked around. Here the agent's tools are four fixed MCP calls, the spend service only produces a signed intent, and the vault re-checks the payee and the amount before it signs. A mistake or an attack upstream still ends at the vault.
 
-## What is real, and what is not
+```
+Gemini agent --MCP (4 tools)--> spend service --intent (HMAC)--> Basis Theory Reactor + vaulted key
+                                                                          |
+                              merchant <--x402 v2 payment signature-------+
+                                  |
+                          Base Sepolia (USDC, EIP-3009)
+```
 
-- Real: Base Sepolia testnet USDC settlement and a Basis Theory Reactor signer.
-- Not real: testnet only, per-payment cap only (no budgets or approvals), the replay is a rendering of a log, and the critic is the same model family as the generator, so its scores are labeled that way.
-- The frozen checks (contradictions, order errors, amount errors, render failures) read the scene's own telemetry. They do not prove every rendered claim against the chain, and they cannot see objects a scene fails to report.
+## What the vault enforces
+
+- The payee must be on the vault's allowlist. Anything else is refused with `rule_payto`.
+- Each payment is capped inside the Reactor. The acceptance suite runs a 7.5 USDC order against a 5 USDC Reactor cap while the spend service allows 10, and the Reactor refuses it with `rule_amount`.
+- An order is marked paid only after confirmed settlement. Paying twice returns the same receipt and settles once.
+- The adapter returns allowlisted fields only. Intents, MACs, nonces, signatures and payment headers never reach the agent.
+
+Real evidence: a 1.5 USDC payment settled on Base Sepolia (tx `0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a`), after an earlier order was refused by the vault with `rule_payto`. See [fixtures/events-gate-b.jsonl](fixtures/events-gate-b.jsonl) and [docs/handoff/gate-b.md](docs/handoff/gate-b.md).
+
+## Basis Theory integration
+
+- Signer: a Node Reactor that checks the intent MAC and its rules, then signs an EIP-3009 `transferWithAuthorization` with the key held in the vault. See `reactors/signer`.
+- Merchant: a fixed adapter profile based on the consortium v0.1.0 draft (manifest, products, orders, pay), using x402 v2 headers on `eip155:84532`. It intentionally differs in places and makes no full-conformance claim. Details in [CHANGELOG.md](CHANGELOG.md) and the merchant package.
+- Agent skills and docs were treated as untrusted input throughout. No Basis Theory key, wallet key or HMAC key is ever in this repo or in an AI session; operators supply them at run time.
+
+## Gemini 4 Argon: Spend Theater
+
+Spend Theater turns the real payment log into a 30 to 45 second 3D replay and improves it with a loop:
+
+1. **Generate** one single-file scene from `theater/spec.md` and the events (thinking level high). This first draft, iteration 0, is saved with hashes and never edited.
+2. **Render** it in Chromium with Playwright and record the video.
+3. **Check** it with the frozen evaluator in `theater/eval/`: contradictions with the log, event-order errors, amount and receipt errors, render failures. Counts are deterministic and hash-pinned, and the loop aborts if the evaluator changes.
+4. **Watch and critique**: Argon reads the video, spec, rubric, events and check results, and returns timestamped issues and rubric scores (thinking level medium).
+5. **Repair**: Argon revises the scene (thinking level high). Repeat, then stop when the critic passes and the frozen checks show zero errors.
+
+Every iteration is listed in a scoreboard, including any that get worse. Frozen counts come first. Critic scores come second and are labeled "model-judged, same model family as the generator".
+
+First exploratory runs on the recorded Gate B log (a real settlement and a real refusal), built before the spec was final (so not clean measurements): frozen-check errors went 2, 1, 0 in one run and 3, 0 in another, each time with a critic pass at the end. A clean measured run is being added. Evidence is under `theater/runs/`.
+
+The loop works with the API (`--mode api`) or by copy and paste through AI Studio (`--mode manual`), with every model input and output hashed in `theater/manifest.json`.
+
+## What is real and what is not
+
+- Real: Base Sepolia testnet USDC settlement, a Basis Theory Reactor signer, and recorded model calls with hashes.
+- Not real: testnet only. Spend control is a per-payment cap and a payee allowlist, not budgets or approvals. The replay is a rendering of a log, not a second source of truth. The critic is the same model family as the generator.
+- The frozen checks read the scene's own reported telemetry. They do not prove every drawn claim against the chain, and they cannot see objects a scene fails to report.
 
 ## Layout
 
-- `packages/merchant`, `packages/spend-service`, `packages/shared`, `packages/mcp-adapter`: the store, the spend service, shared wire code, and the four-tool MCP adapter.
-- `reactors/signer`: the Basis Theory Reactor code.
-- `agent/`: the Gemini buyer.
-- `contracts/`: payment and event schemas.
-- `theater/`: Spend Theater. `theater/eval/` is the frozen evaluator (hash-checked), the rest is the generate, watch, critique, repair loop and scoreboard.
-- `docs/handoff/`: build log per phase and per agent. `docs/review/`: independent reviews.
+- `packages/merchant`, `packages/spend-service`, `packages/shared`, `packages/mcp-adapter`: the store, the spend service, shared wire code and the four-tool MCP adapter.
+- `agent/`: the Gemini buyer (Interactions API function calling).
+- `reactors/signer`: the Basis Theory Reactor.
+- `contracts/`: payment and event schemas, golden fixtures.
+- `theater/`: Spend Theater. `theater/eval/` is frozen.
+- `docs/handoff/`, `docs/review/`: build log and independent reviews.
 
 ## Run the checks (no keys needed)
 
@@ -34,27 +69,21 @@ npm ci
 npm test
 npm run theater:verify
 npm run theater:self-test
-node --test theater/test/*.test.mjs
+npm run theater:test
 ```
 
-Needs Node 26.12.0 and npm 11.20.0 (pinned). Rendering needs Playwright's browser: `npx playwright install chromium ffmpeg`.
+Node 26.12.0 and npm 11.20.0, all dependencies pinned. Rendering needs `npx playwright install chromium ffmpeg`.
 
 ## Run Spend Theater
 
-Needs a Gemini API key, exported in your own shell and never committed.
+Needs a Gemini API key exported in your own shell. It is never committed or logged.
 
 ```sh
 read -s GEMINI_API_KEY; export GEMINI_API_KEY
 node theater/ping.mjs
 node theater/build-scene.mjs fixtures/events-gate-b.jsonl --mode api
-node theater/loop.mjs --events fixtures/events-gate-b.jsonl --iterations 3 --mode api --out theater/runs/r1
+node theater/loop.mjs --events fixtures/events-gate-b.jsonl --iterations 3 --mode api --out theater/runs/r2
 ```
-
-`--mode manual` writes packets for AI Studio instead of calling the API. See [docs/handoff/ag-1.md](docs/handoff/ag-1.md). Iteration 0 is built once and never edited. Every iteration is kept and listed in the scoreboard, including any that got worse.
-
-## Safety notes
-
-Secrets never go in the repo or in an AI coding session: Basis Theory keys, wallet keys, the intent HMAC key and `GEMINI_API_KEY` are supplied by the operator at run time. `.env` files are ignored.
 
 ## License
 
