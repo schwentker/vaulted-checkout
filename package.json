@@ -12,11 +12,14 @@
   },
   "packageManager": "npm@11.20.0",
   "scripts": {
-    "test": "node --test tests/*.test.ts",
+    "test": "node --test tests/*.test.ts tests/acceptance/*.test.ts",
     "typecheck": "tsc --noEmit",
     "golden": "node contracts/fixtures/gen-golden.mjs",
     "smoke:test": "node reactors/smoke/local-test.mjs",
-    "demo:local": "node scripts/demo-local.ts"
+    "demo:local": "node scripts/demo-local.ts",
+    "test:acceptance": "node --test tests/acceptance/*.test.ts",
+    "theater:self-test": "node --test theater/eval/self-test.mjs",
+    "theater:verify": "node theater/eval/verify-frozen.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
@@ -28,6 +31,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "26.6.5",
+    "playwright": "1.62.1",
     "typescript": "7.0.2"
   },
   "allowScripts": {

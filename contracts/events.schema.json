@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vaulted-checkout.local/contracts/events.schema.json",
+  "title": "Vaulted Checkout replay event v1",
+  "description": "One JSON object per events.jsonl line. t is elapsed run milliseconds. No secrets, proofs, headers, or extra fields. File order is event order; t must be nondecreasing across lines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["t", "actor", "kind"],
+  "properties": {
+    "t": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "actor": {"enum": ["agent", "spend", "vault", "merchant", "chain"]},
+    "kind": {"enum": ["list", "order_created", "pay_requested", "refused", "settled", "pending"]},
+    "orderId": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"},
+    "productId": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"},
+    "amount": {"type": "string", "maxLength": 80, "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$", "description": "USDC units, not atomic units. String math only. 1.5 and 1.50 mean the same amount."},
+    "code": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+    "txHash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"}
+  },
+  "allOf": [
+    {"if": {"properties": {"kind": {"enum": ["order_created", "pay_requested", "refused", "settled", "pending"]}}}, "then": {"required": ["orderId"]}},
+    {"if": {"properties": {"kind": {"const": "settled"}}}, "then": {"required": ["amount", "txHash"]}, "else": {"not": {"required": ["txHash"]}}},
+    {"if": {"properties": {"kind": {"const": "refused"}}}, "then": {"required": ["code"]}}
+  ]
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Incorrect frozen evaluator self-test</title>
+<style>body{margin:0;background:#f3ead7;color:#132e58;font:28px sans-serif}header{background:#163f78;color:white;padding:30px}section{padding:40px}.coin{color:#ad2424}.refusal{color:#163f78}</style>
+<header>Vaulted Checkout | local evaluation fixture</header><section id="stage">The vault checks each request.</section>
+<script type="application/json" id="events">[{"t":0,"actor":"vault","kind":"refused","orderId":"ord_no","code":"rule_payto"},{"t":1000,"actor":"chain","kind":"settled","orderId":"ord_yes","amount":"1.5","txHash":"0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a"}]</script>
+<script>
+const labels=[],elements=[];
+window.__theater={duration:36,marks:[],done:false,snapshot:()=>({labels,elements})};
+setTimeout(()=>{
+  document.querySelector('#stage').insertAdjacentHTML('beforeend','<p class="refusal">ord_no refused rule_payto</p><p class="coin">●</p>');
+  __theater.marks.push({t:5000,kind:'refused',orderId:'ord_no',element:'refusal'});
+  labels.push({text:'ord_no refused rule_payto',t:5000});
+  elements.push({name:'refusal:ord_no',visibleFrom:5000,visibleTo:36000});
+  elements.push({name:'coin:ord_no',visibleFrom:5000,visibleTo:36000});
+},5000);
+setTimeout(()=>{
+  document.querySelector('#stage').insertAdjacentHTML('beforeend','<p class="coin">● ord_yes settled 1.50 USDC 0xd026fed3</p>');
+  __theater.marks.push({t:15000,kind:'settled',orderId:'ord_yes',element:'coin'});
+  labels.push({text:'ord_yes settled 1.50 USDC 0xd026fed3',t:15000});
+  elements.push({name:'coin:ord_yes',visibleFrom:15000,visibleTo:36000});
+},15000);
+setTimeout(()=>{__theater.done=true},36000);
+</script>
