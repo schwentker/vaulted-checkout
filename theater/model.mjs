@@ -94,7 +94,14 @@ function apiTransport(env) {
       for (const file of files) if (!file.mime.startsWith('video/')) input.push({ type: 'text', text: `--- ${file.name} ---\n${file.data.toString('utf8')}` });
       input.push({ type: 'text', text: prompt });
       const body = JSON.stringify({ model, input, generation_config: { thinking_level: thinking } });
-      const res = await send(`${base}/interactions`, { headers: { 'content-type': 'application/json', 'x-goog-api-key': key() }, body });
+      // High thinking can take minutes with no bytes back; say so instead of hanging silently.
+      const started = Date.now();
+      const beat = setInterval(() => process.stderr.write(`model: ${step} (${thinking} thinking) waiting, ${Math.round((Date.now() - started) / 1000)}s elapsed\n`), 15000);
+      process.stderr.write(`model: ${step} request sent to ${new URL(base).host}, model ${model}, thinking ${thinking}\n`);
+      let res;
+      try { res = await send(`${base}/interactions`, { headers: { 'content-type': 'application/json', 'x-goog-api-key': key() }, body }); }
+      finally { clearInterval(beat); }
+      process.stderr.write(`model: ${step} answered HTTP ${res.status} after ${Math.round((Date.now() - started) / 1000)}s\n`);
       // Status only: error bodies are not printed.
       if (res.status !== 200) throw new Error(`gemini_http_${res.status}`);
       const raw = res.body.toString('utf8');
