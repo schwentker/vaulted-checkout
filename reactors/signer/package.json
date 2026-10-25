@@ -1,0 +1,6 @@
+{
+  "name": "vc-signer-reactor",
+  "private": true,
+  "description": "runtime.dependencies for the signer Reactor (exact versions)",
+  "dependencies": { "viem": "2.57.11" }
+}

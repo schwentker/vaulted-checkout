@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+evidence/raw/
+.DS_Store
+/runbooks/package-lock.json
+/reactors/smoke/package-lock.json

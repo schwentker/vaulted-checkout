@@ -1,0 +1,79 @@
+[
+  {
+    "case": "empty body",
+    "http": 400,
+    "code": "bad_request",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 459,
+    "pass": true
+  },
+  {
+    "case": "wrong MAC (HMAC runs inside BT)",
+    "http": 401,
+    "code": "bad_mac",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 335,
+    "pass": true
+  },
+  {
+    "case": "value 0 with your MAC (config + MAC key match)",
+    "http": 403,
+    "code": "rule_amount",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 218,
+    "pass": true
+  },
+  {
+    "case": "payee not on allowlist",
+    "http": 403,
+    "code": "rule_payto",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 465,
+    "pass": true
+  },
+  {
+    "case": "over the 5 USDC cap",
+    "http": 403,
+    "code": "rule_amount",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 207,
+    "pass": true
+  },
+  {
+    "case": "future-dated window (v1.1 fix)",
+    "http": 403,
+    "code": "rule_window",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 178,
+    "pass": true
+  },
+  {
+    "case": "other policy version",
+    "http": 403,
+    "code": "rule_policy",
+    "body_keys": [
+      "code",
+      "ok"
+    ],
+    "ms": 330,
+    "pass": true
+  }
+]

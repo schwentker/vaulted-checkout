@@ -1,0 +1,9 @@
+{
+  "name": "vc-operator-tools",
+  "private": true,
+  "type": "module",
+  "description": "Operator-only scripts for Gate A. Codex may fold these deps into the workspace lockfile.",
+  "dependencies": {
+    "viem": "2.57.11"
+  }
+}
