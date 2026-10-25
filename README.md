@@ -1,44 +1,90 @@
 # Vaulted Checkout
 
-Phase 2: a buyer-side spend service and a separate merchant, each with SQLite persistence. Local tests use the public Hardhat #0 account, a mock signer with real EIP-712 signing, a fake facilitator, and a fake chain. They make no Basis Theory, RPC, or facilitator requests.
+AI agents can ask to pay. Only a vault can sign, and only inside fixed rules.
 
-Use Node **26.12.0** and npm **11.20.0** for the workspace. The Reactor remains Node 24 and does not import the SQLite driver or these server packages. All direct dependencies are pinned; `package-lock.json` is the single lockfile. SQLite uses `better-sqlite3@13.0.3`. Its exact install script is approved in package.json for reproducible clean installs.
+A Gemini agent shops over MCP and pays in USDC on Base Sepolia. The wallet key never touches the agent, the buyer's spend service, or any AI session. It lives in a Basis Theory vault, and a Reactor signs only the payments that pass the vault's own checks. A second part of the project uses Gemini 4 Argon to build, watch, critique and repair a visual replay of the payment log, scored by a frozen evaluator that Argon cannot edit.
+
+## Why it matters
+
+Spend controls that live in the agent's own process can be talked around. Here the agent's tools are four fixed MCP calls, the spend service only produces a signed intent, and the vault re-checks the payee and the amount before it signs. A mistake or an attack upstream still ends at the vault.
+
+```
+Gemini agent --MCP (4 tools)--> spend service --intent (HMAC)--> Basis Theory Reactor + vaulted key
+                                                                          |
+                              merchant <--x402 v2 payment signature-------+
+                                  |
+                          Base Sepolia (USDC, EIP-3009)
+```
+
+## What the vault enforces
+
+- The payee must be on the vault's allowlist. Anything else is refused with `rule_payto`.
+- Each payment is capped inside the Reactor. The acceptance suite runs a 7.5 USDC order against a 5 USDC Reactor cap while the spend service allows 10, and the Reactor refuses it with `rule_amount`.
+- An order is marked paid only after confirmed settlement. Paying twice returns the same receipt and settles once.
+- The adapter returns allowlisted fields only. Intents, MACs, nonces, signatures and payment headers never reach the agent.
+
+Real evidence: a 1.5 USDC payment settled on Base Sepolia (tx `0xd026fed37c35078edc3254ef5aa7b7c52af4492b77ae777ccdfb7a226e07fb5a`), after an earlier order was refused by the vault with `rule_payto`. See [fixtures/events-gate-b.jsonl](fixtures/events-gate-b.jsonl) and [docs/handoff/gate-b.md](docs/handoff/gate-b.md).
+
+## Basis Theory integration
+
+- Signer: a Node Reactor that checks the intent MAC and its rules, then signs an EIP-3009 `transferWithAuthorization` with the key held in the vault. See `reactors/signer`.
+- Merchant: a fixed adapter profile based on the consortium v0.1.0 draft (manifest, products, orders, pay), using x402 v2 headers on `eip155:84532`. It intentionally differs in places and makes no full-conformance claim. Details in [CHANGELOG.md](CHANGELOG.md) and the merchant package.
+- Agent skills and docs were treated as untrusted input throughout. No Basis Theory key, wallet key or HMAC key is ever in this repo or in an AI session; operators supply them at run time.
+
+## Gemini 4 Argon: Spend Theater
+
+Spend Theater turns the real payment log into a 30 to 45 second 3D replay and improves it with a loop:
+
+1. **Generate** one single-file scene from `theater/spec.md` and the events (thinking level high). This first draft, iteration 0, is saved with hashes and never edited.
+2. **Render** it in Chromium with Playwright and record the video.
+3. **Check** it with the frozen evaluator in `theater/eval/`: contradictions with the log, event-order errors, amount and receipt errors, render failures. Counts are deterministic and hash-pinned, and the loop aborts if the evaluator changes.
+4. **Watch and critique**: Argon reads the video, spec, rubric, events and check results, and returns timestamped issues and rubric scores (thinking level medium).
+5. **Repair**: Argon revises the scene (thinking level high). Repeat, then stop when the critic passes and the frozen checks show zero errors.
+
+Every iteration is listed in a scoreboard, including any that get worse. Frozen counts come first. Critic scores come second and are labeled "model-judged, same model family as the generator".
+
+First exploratory runs on the recorded Gate B log (a real settlement and a real refusal), built before the spec was final (so not clean measurements): frozen-check errors went 2, 1, 0 in one run and 3, 0 in another, each time with a critic pass at the end. A clean measured run is being added. Evidence is under `theater/runs/`.
+
+The loop works with the API (`--mode api`) or by copy and paste through AI Studio (`--mode manual`), with every model input and output hashed in `theater/manifest.json`.
+
+## What is real and what is not
+
+- Real: Base Sepolia testnet USDC settlement, a Basis Theory Reactor signer, and recorded model calls with hashes.
+- Not real: testnet only. Spend control is a per-payment cap and a payee allowlist, not budgets or approvals. The replay is a rendering of a log, not a second source of truth. The critic is the same model family as the generator.
+- The frozen checks read the scene's own reported telemetry. They do not prove every drawn claim against the chain, and they cannot see objects a scene fails to report.
+
+## Layout
+
+- `packages/merchant`, `packages/spend-service`, `packages/shared`, `packages/mcp-adapter`: the store, the spend service, shared wire code and the four-tool MCP adapter.
+- `agent/`: the Gemini buyer (Interactions API function calling).
+- `reactors/signer`: the Basis Theory Reactor.
+- `contracts/`: payment and event schemas, golden fixtures.
+- `theater/`: Spend Theater. `theater/eval/` is frozen.
+- `docs/handoff/`, `docs/review/`: build log and independent reviews.
+
+## Run the checks (no keys needed)
 
 ```sh
 npm ci
-npm run golden
-npm run smoke:test
-npm run typecheck
 npm test
-npm run demo:local
+npm run theater:verify
+npm run theater:self-test
+npm run theater:test
 ```
 
-The demo prints sanitized payment status and fake receipts, then closes its temporary localhost server and removes its temporary databases. Fake transaction hashes are not chain evidence. Golden PAYMENT-SIGNATURE bytes must remain unchanged for the original fixture inputs.
+Node 26.12.0 and npm 11.20.0, all dependencies pinned. Rendering needs `npx playwright install chromium ffmpeg`.
 
-The phase 1 attack results are in [docs/review/phase-1-review.md](docs/review/phase-1-review.md). Contract changes are v1.1 in [CHANGELOG.md](CHANGELOG.md). Phase 3 must inline the updated `contracts/reference/intent-core.cjs` into the signer and independently review recovery behavior.
+## Run Spend Theater
 
-## Components
-
-- `packages/merchant`: immutable order pricing, manifest subset, x402 v2 challenge, explicit facilitator verification/settlement, persistent proof claims, and reconciliation. It has no buyer signing credential.
-- `packages/spend-service`: buyer policy checks, immutable MAC-authenticated intent allocation, durable attempt state, signer client, payload encoding, sanitized receipt output, and reconciliation.
-- `packages/shared`: wire validation, encoding, HTTP and SQLite helpers, and contract interfaces.
-- `packages/mcp-adapter`: phase 5 placeholder only. The SDK is pinned for later work.
-
-The spend HTTP surface is `GET /products`, `POST /orders {items}`, `GET /orders/{id}`, and `POST /pay {orderId}`. Each item contains only `productId` and `quantity`. The caller cannot provide payment amount, payee, nonce, expiry, intent, or signature. Duplicates return the existing attempt or receipt.
-
-Only a human operator may run the real runtime entry points after Gate A and the phase 3 signer are ready:
+Needs a Gemini API key exported in your own shell. It is never committed or logged.
 
 ```sh
-node scripts/start-merchant.ts
-node scripts/start-spend.ts
+read -s GEMINI_API_KEY; export GEMINI_API_KEY
+node theater/ping.mjs
+node theater/build-scene.mjs fixtures/events-gate-b.jsonl --mode api
+node theater/loop.mjs --events fixtures/events-gate-b.jsonl --iterations 3 --mode api --out theater/runs/r2
 ```
 
-These scripts do not read .env files. The spend process needs operator-supplied `BT_API_BASE`, `BT_SIGNER_REACTOR_ID`, `BT_INVOKER_KEY`, `INTENT_HMAC_KEY`, `WALLET_ADDRESS`, and the public merchant configuration. Merchant needs only its own public payee/origin and RPC endpoint. Keep each process's credentials separate. Defaults bind localhost ports 4000/4001; optional `MERCHANT_DB_PATH` and `SPEND_DB_PATH` select separate persistent files. These entry points were typechecked but deliberately not executed in phase 2.
+## License
 
-On restart, recover interrupted signing/submission before accepting requests. RPC reconciliation reads one finalized block and requires matching authorization use plus transfer evidence. Unknowns remain unknown on errors, consumed-but-unmatched nonces, or oversized historical scans. The RPC adapter bounds scans to 100,000 blocks in 5,000-block chunks; longer outages need a reviewed indexing/manual evidence path. There is no production authentication, aggregate budget enforcement, or mainnet support.
-
-## Consortium subset
-
-The merchant exposes `/.well-known/commerce-manifest`, `GET /api/products`, `POST /api/orders`, `GET /api/orders/{id}`, and `POST /api/orders/{id}/pay`. Payment uses x402 v2 `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, `PAYMENT-RESPONSE`, `eip155:84532`, exact EIP-3009, and Base Sepolia USDC. Amounts are atomic decimal strings, with six USDC decimals.
-
-This is a fixed adapter profile based on the [consortium v0.1.0 draft](https://basistheory.ai/consortium/v0-1-0). It intentionally differs in x402 version/header names, uses a small local order schema and paymentStatus values, adds an order-read route, and omits cards, shipping, taxes, broader commerce endpoints, and automatic arbitrary-manifest tool generation. No full-conformance claim is made.
+MIT. See [LICENSE](LICENSE).

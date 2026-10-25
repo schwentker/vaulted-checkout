@@ -1,0 +1,7 @@
+{
+  "events": "/Users/andres/dev/vaulted-checkout-theater/fixtures/events-gate-b.jsonl",
+  "iterations": 3,
+  "mode": "api",
+  "out": "/Users/andres/dev/vaulted-checkout-theater/theater/runs/r1",
+  "packetsDir": "/Users/andres/dev/vaulted-checkout-theater/theater/runs/r1/packets"
+}

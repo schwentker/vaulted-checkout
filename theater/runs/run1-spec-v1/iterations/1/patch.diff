@@ -1,0 +1,426 @@
+--- 0/scene.html
++++ 1/scene.html
+@@ -55,17 +55,23 @@
+     .outcome-label {
+       position: absolute;
+       transform: translate(-50%, -100%);
+-      padding: 7px 12px;
++      padding: 6px 11px;
+       border-radius: 7px;
+-      font-size: 16px;
++      font-size: 15px;
+       font-weight: 800;
+       white-space: nowrap;
+       box-shadow: 0 4px 12px rgba(20, 18, 15, 0.18);
+       display: none;
++      flex-direction: column;
+       align-items: center;
+-      gap: 7px;
++      gap: 3px;
+       line-height: 1.2;
+     }
++    .outcome-label .badge-main {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++    }
+     .outcome-label.refusal-badge {
+       background: #184ea8;
+       color: #ffffff;
+@@ -80,10 +86,10 @@
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+-      width: 20px;
+-      height: 20px;
++      width: 19px;
++      height: 19px;
+       border-radius: 50%;
+-      font-size: 13px;
++      font-size: 12px;
+       font-weight: 900;
+       background: rgba(255, 255, 255, 0.2);
+     }
+@@ -91,11 +97,10 @@
+       font-size: 10px;
+       font-weight: 600;
+       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+-      opacity: 0.88;
+-      background: rgba(0, 0, 0, 0.22);
+-      padding: 2px 5px;
++      opacity: 0.92;
++      background: rgba(0, 0, 0, 0.24);
++      padding: 1px 5px;
+       border-radius: 4px;
+-      margin-left: 4px;
+     }
+     #caption-bar {
+       position: absolute;
+@@ -292,7 +297,6 @@
+     const COL_RED = 0xc9312b;
+     const COL_RED_LIGHT = 0xff5a52;
+     const COL_YELLOW = 0xf2b718;
+-    const COL_YELLOW_LIGHT = 0xffe066;
+ 
+     // Stage Floor & Track
+     const stageFloor = new THREE.Mesh(
+@@ -557,7 +561,7 @@
+       vaultGroup.add(vaultInteriorLight);
+     }
+ 
+-    // Refusal Mark on the Vault (hidden until refused event)
++    // Refusal Mark on the Vault (shown during Beat 1 refusal, cleared before Beat 2 seal)
+     const refusalSealGroup = new THREE.Group();
+     {
+       const sealDisc = new THREE.Mesh(
+@@ -595,24 +599,50 @@
+       crossBar2.position.z = 0.08;
+       refusalSealGroup.add(crossBar2);
+ 
+-      refusalSealGroup.position.set(-0.62, 1.98, 0.72);
++      refusalSealGroup.position.set(0, 1.98, 0.72);
+       refusalSealGroup.visible = false;
+       vaultGroup.add(refusalSealGroup);
+     }
+ 
+-    // Blue Approval Seal on the Vault (hidden until settled packet reaches vault)
++    // Blue Approval Seal on the Vault (shown when settled packet is sealed at the vault)
+     const vaultBlueSealGroup = new THREE.Group();
+     {
++      const sealDisc = new THREE.Mesh(
++        new THREE.CylinderGeometry(0.44, 0.44, 0.12, 28),
++        new THREE.MeshStandardMaterial({
++          color: COL_BLUE,
++          emissive: COL_BLUE_LIGHT,
++          emissiveIntensity: 0.5,
++          roughness: 0.3
++        })
++      );
++      sealDisc.rotation.x = Math.PI / 2;
++      vaultBlueSealGroup.add(sealDisc);
++
+       const ring = new THREE.Mesh(
+-        new THREE.TorusGeometry(0.36, 0.06, 12, 24),
++        new THREE.TorusGeometry(0.44, 0.055, 12, 28),
+         new THREE.MeshStandardMaterial({
+-          color: COL_BLUE_LIGHT,
+-          emissive: COL_BLUE,
++          color: 0xdbeafe,
++          emissive: COL_BLUE_LIGHT,
+           emissiveIntensity: 0.7
+         })
+       );
++      ring.position.z = 0.05;
+       vaultBlueSealGroup.add(ring);
+-      vaultBlueSealGroup.position.set(0.62, 1.98, 0.72);
++
++      const innerCore = new THREE.Mesh(
++        new THREE.CylinderGeometry(0.2, 0.2, 0.16, 20),
++        new THREE.MeshStandardMaterial({
++          color: 0xffffff,
++          emissive: 0x93c5fd,
++          emissiveIntensity: 0.8
++        })
++      );
++      innerCore.rotation.x = Math.PI / 2;
++      innerCore.position.z = 0.03;
++      vaultBlueSealGroup.add(innerCore);
++
++      vaultBlueSealGroup.position.set(0, 1.98, 0.72);
+       vaultBlueSealGroup.visible = false;
+       vaultGroup.add(vaultBlueSealGroup);
+     }
+@@ -677,6 +707,8 @@
+     // 6. BASE SEPOLIA CHAIN STATION: Row of red linked blocks
+     const chainGroup = createPedestal(X_POS.chain);
+     const settledBlockMesh = new THREE.Group();
++    let ledgerPulseRing;
++    let newBlkMesh;
+     {
+       const redBlockMat = new THREE.MeshStandardMaterial({
+         color: COL_RED,
+@@ -685,45 +717,56 @@
+       });
+       const linkMat = new THREE.MeshStandardMaterial({ color: COL_INK, roughness: 0.5 });
+ 
+-      const xs = [-0.78, -0.14, 0.5];
++      const xs = [-0.93, -0.31, 0.31];
+       xs.forEach((bx, idx) => {
+-        const blk = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), redBlockMat);
++        const blk = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.44, 0.44), redBlockMat);
+         blk.position.set(bx, 0.65, 0);
+         blk.castShadow = true;
+         chainGroup.add(blk);
+ 
+         if (idx < xs.length - 1) {
+           const link = new THREE.Mesh(
+-            new THREE.CylinderGeometry(0.06, 0.06, 0.24, 10),
++            new THREE.CylinderGeometry(0.055, 0.055, 0.22, 10),
+             linkMat
+           );
+           link.rotation.z = Math.PI / 2;
+-          link.position.set(bx + 0.32, 0.65, 0);
++          link.position.set(bx + 0.31, 0.65, 0);
+           chainGroup.add(link);
+         }
+       });
+ 
+-      // 4th block that appears when payment settles on chain
++      // 4th block that is appended to the chain row with a pulse when payment settles
+       const newLink = new THREE.Mesh(
+-        new THREE.CylinderGeometry(0.06, 0.06, 0.24, 10),
++        new THREE.CylinderGeometry(0.055, 0.055, 0.22, 10),
+         linkMat
+       );
+       newLink.rotation.z = Math.PI / 2;
+-      newLink.position.set(0.82, 0.65, 0);
++      newLink.position.set(0.62, 0.65, 0);
+       settledBlockMesh.add(newLink);
+ 
+-      const newBlk = new THREE.Mesh(
+-        new THREE.BoxGeometry(0.52, 0.52, 0.52),
++      newBlkMesh = new THREE.Mesh(
++        new THREE.BoxGeometry(0.5, 0.5, 0.5),
+         new THREE.MeshStandardMaterial({
+           color: COL_RED_LIGHT,
+           emissive: COL_RED,
+-          emissiveIntensity: 0.45,
++          emissiveIntensity: 0.6,
+           roughness: 0.35
+         })
+       );
+-      newBlk.position.set(1.12, 0.65, 0);
+-      settledBlockMesh.add(newBlk);
++      newBlkMesh.position.set(0.93, 0.65, 0);
++      settledBlockMesh.add(newBlkMesh);
+ 
++      ledgerPulseRing = new THREE.Mesh(
++        new THREE.TorusGeometry(0.42, 0.045, 12, 28),
++        new THREE.MeshStandardMaterial({
++          color: 0xffb4ab,
++          emissive: COL_RED_LIGHT,
++          emissiveIntensity: 0.85
++        })
++      );
++      ledgerPulseRing.position.set(0.93, 0.65, 0.28);
++      settledBlockMesh.add(ledgerPulseRing);
++
+       settledBlockMesh.visible = false;
+       chainGroup.add(settledBlockMesh);
+     }
+@@ -770,11 +813,11 @@
+     const packetMesh0 = createYellowPacket();
+     const packetMesh1 = createYellowPacket();
+ 
+-    // Red Coin (Merchant -> Chain)
++    // Red Coin (Buyer -> Merchant: the buyer pays the merchant, and the chain is not the recipient)
+     const redCoinMesh = new THREE.Group();
+     {
+       const coinDisc = new THREE.Mesh(
+-        new THREE.CylinderGeometry(0.4, 0.4, 0.14, 28),
++        new THREE.CylinderGeometry(0.42, 0.42, 0.14, 28),
+         new THREE.MeshStandardMaterial({
+           color: COL_RED,
+           emissive: COL_RED_LIGHT,
+@@ -787,7 +830,7 @@
+       redCoinMesh.add(coinDisc);
+ 
+       const coinRim = new THREE.Mesh(
+-        new THREE.TorusGeometry(0.4, 0.04, 12, 28),
++        new THREE.TorusGeometry(0.42, 0.04, 12, 28),
+         new THREE.MeshStandardMaterial({ color: 0xffb4ab, roughness: 0.3 })
+       );
+       redCoinMesh.add(coinRim);
+@@ -810,24 +853,27 @@
+       captionText: document.getElementById("caption-text")
+     };
+ 
+-    function projectToScreen(worldPos, el) {
++    function projectToScreen(worldPos, el, clampMargin) {
+       const vec = worldPos.clone().project(camera);
+-      const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
++      let x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+       const y = (-vec.y * 0.5 + 0.5) * window.innerHeight;
++      if (clampMargin) {
++        x = Math.max(clampMargin, Math.min(window.innerWidth - clampMargin, x));
++      }
+       el.style.left = `${x.toFixed(1)}px`;
+       el.style.top = `${y.toFixed(1)}px`;
+     }
+ 
+     function updateOverlayPositions() {
+-      projectToScreen(new THREE.Vector3(X_POS.buyer, -0.58, 1.3), domLabels.buyer);
+-      projectToScreen(new THREE.Vector3(X_POS.agent, -0.58, 1.3), domLabels.agent);
+-      projectToScreen(new THREE.Vector3(X_POS.spend, -0.58, 1.3), domLabels.spend);
+-      projectToScreen(new THREE.Vector3(X_POS.vault, -0.58, 1.3), domLabels.vault);
+-      projectToScreen(new THREE.Vector3(X_POS.merchant, -0.58, 1.3), domLabels.merchant);
+-      projectToScreen(new THREE.Vector3(X_POS.chain, -0.58, 1.3), domLabels.chain);
++      projectToScreen(new THREE.Vector3(X_POS.buyer, -0.58, 1.3), domLabels.buyer, 0);
++      projectToScreen(new THREE.Vector3(X_POS.agent, -0.58, 1.3), domLabels.agent, 0);
++      projectToScreen(new THREE.Vector3(X_POS.spend, -0.58, 1.3), domLabels.spend, 0);
++      projectToScreen(new THREE.Vector3(X_POS.vault, -0.58, 1.3), domLabels.vault, 0);
++      projectToScreen(new THREE.Vector3(X_POS.merchant, -0.58, 1.3), domLabels.merchant, 0);
++      projectToScreen(new THREE.Vector3(X_POS.chain, -0.58, 1.3), domLabels.chain, 0);
+ 
+-      projectToScreen(new THREE.Vector3(X_POS.vault - 0.25, 3.05, 0), domLabels.refusal);
+-      projectToScreen(new THREE.Vector3(X_POS.chain + 0.25, 2.35, 0), domLabels.settled);
++      projectToScreen(new THREE.Vector3(X_POS.vault, 3.05, 0), domLabels.refusal, 160);
++      projectToScreen(new THREE.Vector3(7.6, 2.85, 0), domLabels.settled, 175);
+     }
+ 
+     // Replay State Flags (driven by events array in file order)
+@@ -840,6 +886,7 @@
+       ev1Started: false,
+       ev1Sealed: false,
+       ev1CoinStarted: false,
++      ev1MerchantPaid: false,
+       ev1Settled: false
+     };
+ 
+@@ -856,10 +903,10 @@
+       return new THREE.Vector3(x, y, 0.85);
+     }
+ 
+-    // Timeline Schedule (35s declared duration, 32.5s completion after 4.5s final hold)
++    // Timeline Schedule (35s declared duration, 32.5s completion after final hold)
+     // Beat 1 (ev0: refused): 1500ms -> 14000ms (12.5s beat)
+     // Beat 2 (ev1: settled): 14000ms -> 28000ms (14.0s beat)
+-    // Final hold: 28000ms -> 32500ms (4.5s hold), then done = true
++    // Final hold: 22500ms -> 32500ms, then done = true
+     function updateTimeline(nowMs) {
+       // Gentle camera drift that keeps all 6 stations well inside frame
+       const driftAngle = nowMs * 0.00025;
+@@ -876,7 +923,6 @@
+           orderId: ev0.orderId,
+           element: "refusal"
+         });
+-        internal.addElement(`packet:${ev0.orderId}`, nowMs, ev0.orderId);
+         packetMesh0.visible = true;
+       }
+ 
+@@ -897,14 +943,13 @@
+       if (nowMs >= 4800 && !state.ev0Refused) {
+         state.ev0Refused = true;
+         packetMesh0.visible = false;
+-        internal.closeElement(`packet:${ev0.orderId}`, nowMs);
+ 
+         // Vault shows refusal mark (blue seal with cross) and code text
+         refusalSealGroup.visible = true;
+         internal.addElement(`refusal:${ev0.orderId}`, nowMs, ev0.orderId);
+ 
+         const refusalLabelPlain = `refused ${ev0.code} ${ev0.orderId}`;
+-        domLabels.refusal.innerHTML = `<span class="badge-icon">✕</span><span>refused ${ev0.code}</span> <span class="oid-token">${ev0.orderId}</span>`;
++        domLabels.refusal.innerHTML = `<div class="badge-main"><span class="badge-icon">✕</span><span>refused ${ev0.code}</span></div><span class="oid-token">${ev0.orderId}</span>`;
+         domLabels.refusal.style.display = "inline-flex";
+         internal.addLabel(refusalLabelPlain, nowMs, ev0.orderId);
+ 
+@@ -914,25 +959,28 @@
+       // --- BEAT 2: Event 1 (settled) ---
+       if (nowMs >= 14000 && !state.ev1Started) {
+         state.ev1Started = true;
++        // Clear 3D cross badge from vault face before the second order is processed
++        refusalSealGroup.visible = false;
++        internal.closeElement(`refusal:${ev0.orderId}`, nowMs);
++
+         theater.marks.push({
+           t: Math.round(nowMs),
+           kind: ev1.kind,
+           orderId: ev1.orderId,
+           element: "coin"
+         });
+-        internal.addElement(`packet:${ev1.orderId}`, nowMs, ev1.orderId);
+         packetMesh1.visible = true;
+       }
+ 
+-      if (nowMs >= 14000 && nowMs < 19200) {
+-        if (nowMs < 15800) {
++      if (nowMs >= 14000 && nowMs < 19000) {
++        if (nowMs < 15700) {
+           // agent -> spend
+-          const u = (nowMs - 14000) / 1800;
++          const u = (nowMs - 14000) / 1700;
+           packetMesh1.position.copy(lerpPos(X_POS.agent, X_POS.spend, u, 0.55));
+           spendGateBar.rotation.z = Math.sin(u * Math.PI) * 0.48;
+-        } else if (nowMs < 17600) {
++        } else if (nowMs < 17400) {
+           // spend -> vault
+-          const u = (nowMs - 15800) / 1800;
++          const u = (nowMs - 15700) / 1700;
+           packetMesh1.position.copy(lerpPos(X_POS.spend, X_POS.vault, u, 0.45));
+           spendGateBar.rotation.z = 0;
+         } else {
+@@ -947,35 +995,41 @@
+         }
+       }
+ 
+-      // Only AFTER vault seals packet, red coin moves merchant -> chain and merchant lights up
+-      if (nowMs >= 19200 && !state.ev1CoinStarted) {
++      // Only AFTER vault seals packet, red coin moves from Buyer company side to Merchant
++      if (nowMs >= 19000 && !state.ev1CoinStarted) {
+         state.ev1CoinStarted = true;
+         packetMesh1.visible = false;
+-        internal.closeElement(`packet:${ev1.orderId}`, nowMs);
+         vaultInteriorLight.intensity = 1.0;
+ 
+-        setMerchantLit(true);
+         redCoinMesh.visible = true;
++        redCoinMesh.position.set(X_POS.buyer, 1.35, 0.9);
+         internal.addElement(`coin:${ev1.orderId}`, nowMs, ev1.orderId);
+       }
+ 
+-      if (nowMs >= 19200 && nowMs < 22500) {
+-        const u = (nowMs - 19200) / 3300;
+-        redCoinMesh.position.copy(lerpPos(X_POS.merchant, X_POS.chain + 1.12, u, 0.85));
++      if (nowMs >= 19000 && nowMs < 22000) {
++        const u = (nowMs - 19000) / 3000;
++        // Buyer pays Merchant: red coin moves from buyer station to merchant station and stops there
++        redCoinMesh.position.copy(lerpPos(X_POS.buyer, X_POS.merchant, u, 1.35));
+         redCoinMesh.rotation.y = u * Math.PI * 2;
+       }
+ 
+-      if (nowMs >= 22500 && !state.ev1Settled) {
+-        state.ev1Settled = true;
+-        redCoinMesh.position.set(X_POS.chain + 1.12, 1.25, 0);
++      if (nowMs >= 22000 && !state.ev1MerchantPaid) {
++        state.ev1MerchantPaid = true;
++        // Coin rests at the Merchant (never enters the chain)
++        redCoinMesh.position.set(X_POS.merchant, 1.25, 0.92);
+         redCoinMesh.rotation.y = 0;
++        setMerchantLit(true);
++      }
+ 
++      // Separate ledger cue on Base Sepolia chain: new red block appended with pulse, no coin entering it
++      if (nowMs >= 22500 && !state.ev1Settled) {
++        state.ev1Settled = true;
+         settledBlockMesh.visible = true;
+-        internal.addElement(`settled:${ev1.orderId}`, nowMs, ev1.orderId);
++        internal.addElement(`ledger:${ev1.orderId}`, nowMs, ev1.orderId);
+ 
+         const shortHash = ev1.txHash.slice(0, 10);
+         const settledLabelPlain = `${ev1.amount} USDC ${shortHash} ${ev1.orderId}`;
+-        domLabels.settled.innerHTML = `<span class="badge-icon">●</span><span>${ev1.amount} USDC · ${shortHash}</span> <span class="oid-token">${ev1.orderId}</span>`;
++        domLabels.settled.innerHTML = `<div class="badge-main"><span class="badge-icon">●</span><span>${ev1.amount} USDC · ${shortHash}</span></div><span class="oid-token">${ev1.orderId}</span>`;
+         domLabels.settled.style.display = "inline-flex";
+         internal.addLabel(settledLabelPlain, nowMs, ev1.orderId);
+ 
+@@ -986,6 +1040,20 @@
+         );
+       }
+ 
++      // Ledger inclusion pulse animation on the newly appended 4th chain block
++      if (state.ev1Settled) {
++        const dt = nowMs - 22500;
++        if (dt < 2400) {
++          const pulse = 1 + 0.28 * Math.sin((dt / 2400) * Math.PI * 3) * (1 - dt / 2400);
++          newBlkMesh.scale.set(pulse, pulse, pulse);
++          const ringScale = 1 + 0.45 * Math.sin((dt / 2400) * Math.PI * 2);
++          ledgerPulseRing.scale.set(ringScale, ringScale, 1);
++        } else {
++          newBlkMesh.scale.set(1, 1, 1);
++          ledgerPulseRing.scale.set(1.08, 1.08, 1);
++        }
++      }
++
+       // Final state holds from 22.5s to 32.5s (well over 3-5s hold), then done = true
+       if (nowMs >= 32500 && !theater.done) {
+         theater.done = true;
