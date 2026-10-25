@@ -86,7 +86,7 @@ function apiTransport(env) {
   }
   return {
     model,
-    async call({ prompt, files, thinking }) {
+    async call({ step, prompt, files, thinking }) {
       const input = [];
       for (const file of files) {
         if (file.mime.startsWith('video/')) input.push(file.data.length <= INLINE_VIDEO_LIMIT ? { type: 'video', data: file.data.toString('base64'), mime_type: file.mime } : await upload(file));

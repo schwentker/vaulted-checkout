@@ -53,10 +53,15 @@ Camera: fixed or slow drift; every station stays in frame at 1280x720.
   and the code text, for example `refused rule_payto`. No coin, no chain block,
   merchant stays dark. Caption: "Vault refused the payment: <code>".
 - `settled` (actor chain): a yellow packet travels agent -> spend -> vault, the
-  vault seals it (blue), then a red coin moves merchant -> chain only after that.
-  Label: `<amount> USDC` and the first 10 characters of txHash including 0x
-  (for example `0xd026fed3`). Merchant lights up. Caption: "Settled on Base
-  Sepolia: <amount> USDC, receipt <first 10 of txHash>".
+  vault seals it (blue), then, only after that, a red coin moves from the Buyer
+  company side to the merchant: the buyer pays the merchant, and the chain is
+  not the recipient. The chain then shows a separate ledger cue: a new red
+  block is appended to the chain row with a short "recorded on the ledger"
+  pulse, no coin entering it. Label: `<amount> USDC` and the first 10
+  characters of txHash including 0x (for example `0xd026fed3`). Merchant
+  lights up. Caption: "Settled on Base Sepolia: <amount> USDC, receipt
+  <first 10 of txHash>". The coin element is the payment; the appended block
+  is the ledger inclusion, recorded as an element named `ledger:<orderId>`.
 - `pay_requested`, `order_created`, `list`, `pending`: a yellow packet or
   message card at the acting station with a plain caption. `pending` never
   shows a coin or the word settled or paid.
@@ -97,7 +102,7 @@ sentence) so the evaluator can bind it.
   - `marks`: push exactly one `{t, kind, orderId, element}` per event at the
     moment that event becomes visible. `t` is replay milliseconds since the
     replay started. `kind` and `orderId` copy the event. `element` is the role
-    that appeared: `packet`, `coin`, `refusal`, `settled`, `agent`, `spend`,
+    that appeared: `packet`, `coin`, `refusal`, `settled`, `ledger`, `agent`, `spend`,
     `vault`, `merchant`, `chain`.
   - `snapshot()` returns a cumulative history `{labels:[{text,t,orderId?}],
     elements:[{name,visibleFrom,visibleTo,orderId?}]}` of everything ever shown,
