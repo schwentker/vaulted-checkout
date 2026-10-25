@@ -1,4 +1,6 @@
-# Vaulted Checkout
+# Vaulted Checkout, with Spend Theater
+
+Vaulted Checkout is the payment system. Spend Theater is the Gemini 4 Argon part: it takes Vaulted Checkout's real payment log and builds, watches, critiques and repairs a short 3D film of every payment the agent tried, scored by a frozen evaluator Argon cannot edit.
 
 Phase 2: a buyer-side spend service and a separate merchant, each with SQLite persistence. Local tests use the public Hardhat #0 account, a mock signer with real EIP-712 signing, a fake facilitator, and a fake chain. They make no Basis Theory, RPC, or facilitator requests.
 
