@@ -6,7 +6,7 @@
 - Uncommitted files: none after the CX-1 checkpoint commit.
 - Contract version: new events v1, recorded in CHANGELOG.md. Existing payment contracts remain v1.1.
 - What is done: exact Playwright dependency and reconciled lockfile; event schema and evidence-backed Gate B fixture; independent stdio adapter acceptance suite; frozen evaluator, rubric, metrics, tamper verifier, two browser fixtures and nine self-tests.
-- Completion status: evaluator and dependency work ready to land first. Overall CX-1 acceptance gate is NOT GREEN. The adapter implementation has not landed, so all eight adapter acceptance cases fail explicitly. No test is skipped or relaxed for the missing implementation.
+- Completion status: evaluator and dependency work ready to land first. Overall CX-1 acceptance gate is NOT GREEN. The adapter implementation is absent from the acceptance worktree, so all eight adapter integration cases fail explicitly. The new discriminator regression passes. No test is skipped or relaxed for the missing implementation.
 - Migrations / DB state: none. Tests use temporary local databases.
 - Deployment ids: no deployment performed. No operational credentials or .env files were accessed; only the repository's existing public test fixtures were used.
 - Open questions for the other vendor: implement the adapter contract and run the independent suite. Argon must use the snapshot interface and measurement rules in theater/eval/README.md.
@@ -23,7 +23,8 @@ permitted gave the original 27/27 passing tests.
 | --- | --- |
 | `npm test` before adding acceptance tests | GREEN: 27 passed, 0 failed |
 | `npm ci --offline --ignore-scripts --no-audit --no-fund` | GREEN: clean offline install, 127 packages, no package scripts |
-| `npm test` with acceptance suite | RED: 37 total, 29 passed, 8 failed, 0 skipped. All failures are the explicit missing packages/mcp-adapter/src/server.ts assertion |
+| `npm test` at initial freeze | RED: 37 total, 29 passed, 8 failed, 0 skipped. All failures are the explicit missing packages/mcp-adapter/src/server.ts assertion |
+| `npm test` after tagged-union clarification | RED: 38 total, 30 passed, 8 failed, 0 skipped. Same eight missing-adapter failures; no newly appearing reds |
 | `npm run theater:self-test` | GREEN: 9 passed, 0 failed, 0 skipped |
 | `npm run theater:verify` | GREEN: frozen true |
 | `npm run typecheck` | GREEN |
@@ -32,9 +33,11 @@ permitted gave the original 27/27 passing tests.
 | Direct local Reactor refusal setup used by acceptance | GREEN: 7.5 USDC, spend cap 10, Reactor cap 5, one Reactor call, rule_amount, failed_confirmed, zero settlements |
 | `git diff --check` | GREEN |
 
-The local Reactor setup check does not replace the missing adapter test. The
-cc/buyer ref was still 1cff0a4 and no adapter source existed in either worktree
-at the final check. Adapter conformance remains UNVERIFIED.
+The local Reactor setup check does not replace the missing adapter test. At the original freeze,
+the cc/buyer ref was still 1cff0a4 and no adapter source existed in either
+worktree. At this clarification check, cc/buyer points to 20717ff, but adapter
+source is still absent in the codex/accept worktree. Adapter conformance remains
+UNVERIFIED.
 
 ## Dependencies and Robert runs
 
@@ -93,14 +96,26 @@ allowlists, duplicate pay, upstream poison fields, exact amount conversion
 beyond Number precision, invalid ids before HTTP, local origin restrictions,
 and caller attempts to override origin, payee, amount or headers.
 
-Payment objects follow the v4 shapes exactly, without extra state/status tags:
-settled {orderId,amount,txHash,explorer}, refused {orderId,code,reason}, pending
-{orderId,state,hint}, error {code}. MCP content is one JSON text item; if
-structuredContent is also present it must match. Products retain the current
-spend API's id/name/unitAmount/currency allowlist, either an array or {products}.
-Orders use id or orderId, amount, currency, paymentStatus, and optional sanitized
-items/payment; get_order can wrap {order,payment?}. The tests do not require
-one textual formatting of 1.5 USDC. Refusal reasons are the fixed v4 phrases.
+Claude/Robert clarified on 2026-10-25 that all adapter results are tagged:
+list_products {status:'ok',products}; create_order {status:'created',...order};
+get_order {status:'order',...order,payment?}; settled
+{status:'settled',orderId,amount,txHash,explorer}; refused
+{status:'refused',orderId,code,reason}; pending
+{status:'pending',orderId,state,hint}; errors {status:'error',code}.
+Nested get_order payment objects use the same three payment tags. Unknown,
+missing, and wrong-variant status values fail. Every exact result-key check
+includes status and asserts its fixed value. Bare product arrays and nested
+{order} result wrappers are no longer accepted under this clarified contract.
+
+MCP content remains one JSON text item; if structuredContent is also present
+it must match. Products retain the id/name/unitAmount/currency allowlist.
+Orders retain id or orderId, amount, currency, paymentStatus, and optional
+sanitized items/payment. Product records and line items are data within a
+result and retain their original exact keys without an invented status field.
+create_order/get_order equality still compares every order field after each
+result's distinct fixed tag is checked. The tests do not require one textual
+formatting of 1.5 USDC. Refusal reasons remain the fixed v4 phrases. All other
+security, shape, precision, idempotency, quantity, and HTTP assertions remain.
 
 The actual generated Reactor is used for the over-cap case, with a 5 USDC cap
 and spend cap of 10 USDC. It must refuse before token access. Existing source
@@ -150,3 +165,36 @@ Snapshots are self-reported scene telemetry. A deliberately false snapshot
 cannot be disproved by this evaluator; the video critique is separate evidence.
 Hash verification detects changes relative to the committed manifest, not an
 actor who rewrites both code and manifest. Review the committed diff as well.
+
+## Tagged-union clarification follow-up
+
+Source: direct Claude/Robert clarification supplied by the user on 2026-10-25.
+This supersedes the original untagged result interpretation. Updated only
+tests/acceptance/adapter.accept.test.ts, CHANGELOG.md, and this handoff. Added
+a regression that exercises valid tags and rejects missing, unknown, and
+wrong-variant tags, extra result fields, and invalid nested payment tags even
+while the adapter source is absent. Model/effort disclosure remains as above.
+
+Validation for this follow-up:
+
+- `npm test`: RED, 38 tests, 30 passed, 8 failed, 0 skipped. The new tag
+  regression passes. No newly appearing reds compared with the initial freeze.
+- `npm run typecheck`: GREEN.
+- `node theater/eval/verify-frozen.mjs`: GREEN, frozen true.
+- `git diff --check`: GREEN.
+
+All eight reds stop at the same explicit missing adapter source assertion,
+`CC-1 adapter is absent. Acceptance is RED until packages/mcp-adapter/src/server.ts lands.`
+The following cases therefore remain unverified, not passing:
+
+1. adapter advertises exactly four tools, lists products, creates and reads an order
+2. adapter settlement is sanitized and duplicate pay returns the identical receipt once
+3. 7.5 USDC is refused by the actual Reactor at 5 USDC despite spend allowing 10 USDC
+4. uncertain settlement stays pending and never returns a receipt
+5. invalid ids, quantities and unknown tools are rejected before any HTTP request
+6. tool args cannot override origin, payee, price, or headers
+7. SPEND_ORIGIN rejects nonlocal origins and unsafe URL components explicitly
+8. upstream extra fields and refusal reasons cannot leak through any result
+
+This follow-up preserves all non-discriminator checks. Re-run the full suite
+when the adapter is present to reveal any subsequent conformance failures.
