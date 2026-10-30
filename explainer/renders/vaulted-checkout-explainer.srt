@@ -1,0 +1,139 @@
+1
+00:00:23,500 --> 00:00:24,932
+A buyer, and its agent.
+
+2
+00:00:25,400 --> 00:00:26,989
+I shop. I'm not trusted.
+
+3
+00:00:27,233 --> 00:00:29,841
+I reach the buyer's service through fixed tools.
+
+4
+00:00:30,067 --> 00:00:31,447
+I decide for the buyer.
+
+5
+00:00:31,667 --> 00:00:35,241
+I check policy, keep a ledger, and seal what I approve.
+
+6
+00:00:35,467 --> 00:00:36,638
+Basis Theory.
+
+7
+00:00:36,867 --> 00:00:40,206
+I sign, by fixed rules, and my vault holds the key.
+
+8
+00:00:40,433 --> 00:00:42,388
+I'm the merchant, across the line.
+
+9
+00:00:42,633 --> 00:00:44,901
+I'm the facilitator. And this is the chain.
+
+10
+00:00:45,133 --> 00:00:46,618
+I order the paper.
+
+11
+00:00:47,066 --> 00:00:48,655
+I fix the price.
+
+12
+00:00:48,900 --> 00:00:50,280
+I ask to pay.
+
+13
+00:00:50,833 --> 00:00:54,773
+402: pay 1.5 USDC to this address.
+
+14
+00:00:55,033 --> 00:00:57,354
+I check the terms against policy.
+
+15
+00:00:57,600 --> 00:01:00,208
+I log a one-time nonce and an expiry.
+
+16
+00:01:00,433 --> 00:01:01,866
+Then I seal the intent.
+
+17
+00:01:02,133 --> 00:01:04,454
+I send the sealed intent to Basis Theory.
+
+18
+00:01:04,700 --> 00:01:06,054
+I check the seal,
+
+19
+00:01:06,300 --> 00:01:08,072
+then my five fixed rules.
+
+20
+00:01:09,500 --> 00:01:11,272
+Only then does my key sign.
+
+21
+00:01:11,500 --> 00:01:13,925
+The signature leaves. The key stays with me.
+
+22
+00:01:14,167 --> 00:01:15,599
+The signature checks out.
+
+23
+00:01:15,834 --> 00:01:17,370
+I record the claim.
+
+24
+00:01:17,600 --> 00:01:19,267
+I verify, then submit.
+
+25
+00:01:19,500 --> 00:01:22,708
+The buyer's USDC moves to the merchant, and I record it.
+
+26
+00:01:22,934 --> 00:01:26,142
+Settled. My receipt carries the transaction hash.
+
+27
+00:01:26,367 --> 00:01:28,321
+Now, requests that should fail.
+
+28
+00:01:28,567 --> 00:01:30,992
+A request names an unlisted payee.
+
+29
+00:01:31,234 --> 00:01:34,677
+403. My vault stays shut. No signature exists.
+
+30
+00:01:34,900 --> 00:01:39,415
+To test the signer by itself, I called it directly, with no spend service in front.
+
+31
+00:01:39,633 --> 00:01:42,789
+Over the five USDC cap: 403.
+
+32
+00:01:43,033 --> 00:01:46,424
+Outside the time window, another policy, a bad seal: refused.
+
+33
+00:01:49,367 --> 00:01:51,165
+I pay the same order again,
+
+34
+00:01:51,400 --> 00:01:53,433
+and I return the same receipt.
+
+35
+00:01:53,667 --> 00:01:55,203
+One order, one transfer.
