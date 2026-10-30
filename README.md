@@ -1,10 +1,10 @@
 # Vaulted Checkout
 
-**Agent-requested payments with policy checks at the signing boundary.**
+**Give an AI agent permission to pay without giving it the wallet key.**
 
-Vaulted Checkout is an experimental payment architecture using Gemini, MCP, Basis Theory, x402 v2 and USDC on Base Sepolia. The agent can shop and request payment without receiving the wallet private key. The spend service creates an HMAC-authenticated intent; trusted Basis Theory Reactor code verifies that intent and fixed policy before retrieving the vaulted key and signing an EIP-3009 authorization.
+Vaulted Checkout is an experimental agent-payment architecture using Gemini, MCP, Basis Theory, x402 v2 and USDC on Base Sepolia. The agent can shop and request payment without receiving the wallet private key. The spend service creates an HMAC-authenticated intent; trusted Basis Theory Reactor code verifies that intent and fixed policy before retrieving the vaulted key and signing an EIP-3009 authorization.
 
-[Watch the final explainer](explainer/renders/vaulted-checkout-explainer.mp4)
+▶ [Watch the 107-second explainer](https://sandboxlabs.ai/vaulted-checkout-explainer/)
 
 ## Payment architecture
 
